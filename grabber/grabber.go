@@ -3,75 +3,61 @@
 package grabber
 
 import (
-	"net/url"
-	"net/http"
+	"context"
 	"encoding/json"
-
+	"net/http"
+	"net/url"
 	"github.com/pkg/errors"
+
+	"github.com/pamungkaski/camar/client"
+	"github.com/pamungkaski/camar/datamodel"
 )
 
 // USGS is the main struct that implement ResourceGrabber interface.
 // The main usage of this struct is to get earthquake data.
 type USGS struct {
 	endpoint string
-	api http.Client
-}
-
-// USGSEarthquakeData is the main struct to wrap data from USGS endpoint.
-type USGSEarthquakeData struct {
-	Type string `json:"type"`
-	EventID    string                   `json:"id"`
-	Geometry   USGSGeometry             `json:"geometry"`
-	Properties USGSEarthquakeProperties `json:"properties"`
-}
-
-// USGSGeometry is the struct that holds geo location of USGS event.
-type USGSGeometry struct {
-	Type        string    `json:"type"`
-	Coordinates []float64 `json:"coordinates"`
-}
-
-// USGSEarthquakeProperties is the struct that holds detailed information of earthquake from USGS endpoint.
-type USGSEarthquakeProperties struct {
-	Title string `json:"title"`
-	Magnitude float64 `json:"mag"`
-	Time      float64 `json:"time"`
-	Tsunami   int     `json:"tsunami"`
-	Alert     string  `json:"alert"`
+	api      client.Client
 }
 
 // NewGrabber is the function used to initiate USGS client.
 // It save the USGS endpoint to get earthquake data.
-func NewGrabber(endpoint string) *USGS {
+func NewGrabber(endpoint string, api client.Client) (*USGS) {
 	return &USGS{
 		endpoint: endpoint,
-		api: http.Client{},
+		api:      api,
 	}
 }
 
 // GetEarthquakeData is the main function fo USGS to get and wrap USGS data into camar data.
-func (u *USGS)GetEarthquakeData(eventID string) (USGSEarthquakeData, error){
-	var data USGSEarthquakeData
-	endpoint, err := u.buildUSGSQuery(eventID)
+func (u *USGS) GetEarthquakeData(eventID string) (datamodel.GeoJSON, error) {
+	var data datamodel.GeoJSON
+	req, err := u.buildUSGSRequest(eventID)
 	if err != nil {
 		return data, err
 	}
 
-	//fmt.Println(endpoint.String())
+	//fmt.Println(req.URL.String())
 
-	data, err = u.hitUSGSendpoint(endpoint)
+	_, body, err := u.api.Do(context.Background(), req)
 	if err != nil {
 		return data, err
 	}
+
+	if err = json.Unmarshal(body, &data); err != nil {
+		return data, errors.Wrap(err, "failed to retrive data from usgs")
+	}
+
+	//fmt.Println(body)
 
 	return data, nil
 }
 
 // buildUSGSQuery is the function to build USGS endpoint with the detailed query needed.
-func (u *USGS)buildUSGSQuery(eventID string) (*url.URL, error) {
+func (u *USGS) buildUSGSRequest(eventID string) (*http.Request, error) {
 	endpoint, err := url.Parse(u.endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err,"failed to create USGSquery")
+		return nil, errors.Wrap(err, "failed to create USGSquery")
 	}
 	endpoint.Scheme = "https"
 	endpoint.Host = "earthquake.usgs.gov"
@@ -82,22 +68,10 @@ func (u *USGS)buildUSGSQuery(eventID string) (*url.URL, error) {
 
 	endpoint.RawQuery = query.Encode()
 
-	return endpoint, nil
-}
-
-func (u *USGS)hitUSGSendpoint(endpoint *url.URL) (USGSEarthquakeData, error) {
-	var data USGSEarthquakeData
-
-	res, err := u.api.Get(endpoint.String())
+	req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
 	if err != nil {
-		return data, errors.Wrap(err,"failed to retrive data from usgs")
+		return nil, err
 	}
 
-	if err = json.NewDecoder(res.Body).Decode(&data); err != nil {
-		return data, errors.Wrap(err,"failed to retrive data from usgs")
-	}
-
-	defer res.Body.Close()
-
-	return data, nil
+	return req, nil
 }
