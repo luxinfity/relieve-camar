@@ -13,25 +13,34 @@ import (
 // DisasterReporter is the business logic contract for camar service.
 // The main idea of the interface is to record disaster into database then alert all service's client.
 type DisasterReporter interface {
+	// ListenTheEarth is a function that Listen to any Earthquake happen.
+	// It is the main function of DisasterReporter Interface
+	ListenTheEarth(ctx context.Context)
 	// RecordDisaster is a function to save Disaster into our database.
 	RecordDisaster(ctx context.Context, disaster Disaster) (Disaster, error)
 	// AlertDisastrousEvent is a function to alert service's client.
 	AlertDisastrousEvent(ctx context.Context, disaster Disaster) error
 	// NewClient is a function to save new client device for alerting purpose.
 	NewClient(ctx context.Context, client Client) (Client, error)
-	// UpdateClient is a function to update client latitude and logitude coordinate.
+	// UpdateClient is a function to update client latitude and longitude coordinate.
 	UpdateClient(ctx context.Context, client Client) (Client, error)
 }
 
-// Alerting is the bussines logic contract for alerting service.
+// ResourceGrabber is the bussiness logic contract for getting earthquake data.
+type ResourceGrabber interface {
+	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
+	GetEarthquakeData(eventID string)
+}
+
+// Alerting is the bussiness logic contract for alerting service.
 // the main idea is to send alert to all client.
 type Alerting interface {
 	// SendAlert is a function to send Disastrous Event alert to specific Client using the alerting service.
 	SendAlert(alert string, client Client) error
 }
 
-// Recording is the business logic contract for saving data.
-type Recording interface {
+// Recorder is the business logic contract for saving data.
+type Recorder interface {
 	// SaveDisaster is a function to save disaster data into database
 	SaveDisaster(disaster Disaster) error
 	// SaveClient is a function to register client on the alerting service.
@@ -57,6 +66,7 @@ type Coordinate struct {
 // It contains disaster details.
 type Disaster struct {
 	ID                  bson.ObjectId `bson:"_id" json:"id"`
+	USGSEventID         string        `json:"usgs_event_id"`
 	Type                string        `json:"type"`
 	Coordinate          Coordinate    `json:"coordinate"`
 	DangerousZoneRadius float64       `json:"dangerous_zone_radius"`
@@ -77,8 +87,15 @@ type Client struct {
 // It contains alerting and recording interface implementation.
 type Camar struct {
 	alerting  Alerting
-	recording Recording
+	recording Recorder
 	writer    AlertWritter
+	grabber   ResourceGrabber
+}
+
+// ListenTheEarth is a function that Listen to any Earthquake happen.
+// It is the main function of DisasterReporter Interface
+func (c *Camar) ListenTheEarth(ctx context.Context) {
+
 }
 
 // RecordDisaster is a function to save Disaster into our database.
