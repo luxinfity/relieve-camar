@@ -110,4 +110,3 @@ func TestUSGS_buildUSGSRequest(t *testing.T) {
 		})
 	}
 }
-
