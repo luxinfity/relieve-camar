@@ -1,9 +1,9 @@
 package client
 
 import (
-	"net/http"
-	"io/ioutil"
 	"context"
+	"io/ioutil"
+	"net/http"
 )
 
 type httpClientMock struct {
