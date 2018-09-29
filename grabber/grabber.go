@@ -5,9 +5,9 @@ package grabber
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
-	"github.com/pkg/errors"
 
 	"github.com/pamungkaski/camar/client"
 	"github.com/pamungkaski/camar/datamodel"
@@ -22,7 +22,7 @@ type USGS struct {
 
 // NewGrabber is the function used to initiate USGS client.
 // It save the USGS endpoint to get earthquake data.
-func NewGrabber(endpoint string, api client.Client) (*USGS) {
+func NewGrabber(endpoint string, api client.Client) *USGS {
 	return &USGS{
 		endpoint: endpoint,
 		api:      api,

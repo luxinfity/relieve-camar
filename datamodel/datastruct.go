@@ -1,10 +1,14 @@
 package datamodel
 
-import "time"
+import (
+	"github.com/globalsign/mgo/bson"
+	"time"
+)
 
 // GeoJSONEarthquakeData is the main struct to wrap data from GeoJSON endpoint.
 type GeoJSON struct {
-	Type       string `json:"type"`
+	BsonID     bson.ObjectId `bson:"_id" json:"bson_id"`
+	Type       string        `json:"type"`
 	Properties struct {
 		Mag      float64     `json:"mag"`
 		Place    string      `json:"place"`
