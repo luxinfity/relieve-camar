@@ -49,6 +49,7 @@ func (u *USGS) GetEarthquakeData(eventID string) (datamodel.GeoJSON, error) {
 	}
 
 	//fmt.Println(body)
+	data.URL = req.URL.String()
 
 	return data, nil
 }

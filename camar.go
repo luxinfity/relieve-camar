@@ -5,19 +5,20 @@ package camar
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"fmt"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
+	"firebase.google.com/go/messaging"
+	"github.com/dghubble/go-twitter/twitter"
 
 	"github.com/pamungkaski/camar/datamodel"
-	"github.com/dghubble/go-twitter/twitter"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-	"log"
-	"strings"
-	"net/http"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -62,13 +63,13 @@ type Recorder interface {
 // the main idea is to send alert to all device.
 type Alerting interface {
 	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(alert string, device Device) error
+	SendAlert(alert *messaging.Message) error
 }
 
 // AlerWritter is the business logic contract for alert message writter.
 type AlertWritter interface {
 	// CreateAlertMessage is a function to create alert message based on th disaster event that currently occurs.
-	CreateAlertMessage(disaster datamodel.GeoJSON) (string, error)
+	CreateAlertMessage(disaster datamodel.GeoJSON, alerts []string) (*messaging.Message, error)
 }
 
 // Device is the struct for each device conected to service.
@@ -78,6 +79,7 @@ type AlertWritter interface {
 type Device struct {
 	ID       bson.ObjectId `bson:"_id" json:"id"`
 	DeviceID string        `json:"device_id"`
+	Token    string        `json:"token"`
 	Location struct {
 		Type        string    `json:"type"`
 		Coordinates []float64 `json:"coordinates"`
@@ -88,18 +90,21 @@ type Device struct {
 // Camar implements DisasterReporter interface.
 // It contains alerting and recording interface implementation.
 type Camar struct {
-	listener *twitter.Client
-	grabber   ResourceGrabber
-	recording Recorder
-	alerting  Alerting
-	writer    AlertWritter
+	listener      *twitter.Client
+	grabber       ResourceGrabber
+	recording     Recorder
+	alerting      Alerting
+	writer        AlertWritter
+	usgsTwitterID int64
 }
+
 // NewDisasterReporter is a function that creates an instance of DisasterReporter.
-func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber) DisasterReporter {
+func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber, twitterID int64) DisasterReporter {
 	return &Camar{
-		listener: client,
-		recording: recorder,
-		grabber: grabber,
+		listener:      client,
+		recording:     recorder,
+		grabber:       grabber,
+		usgsTwitterID: twitterID,
 	}
 }
 
@@ -111,31 +116,35 @@ func (c *Camar) ListenTheEarth() {
 	// Convenience Demux demultiplexed stream messages
 	demux := twitter.NewSwitchDemux()
 	demux.Tweet = func(tweet *twitter.Tweet) {
-		text := tweet.Text
-		splitted := strings.Split(text, " ")
-		textLength := len(splitted)
+		if tweet.User.ID == c.usgsTwitterID {
+			// Get Shortened link of the event
+			text := tweet.Text
+			splitted := strings.Split(text, " ")
+			textLength := len(splitted)
 
-		id, err := c.getEarthquakeEventID(splitted[textLength - 1])
-		if err != nil {
-			fmt.Println(err)
+			// Get
+			id, err := c.getEarthquakeEventID(splitted[textLength-1])
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			data, err := c.grabber.GetEarthquakeData(id)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			data, err = c.RecordDisaster(context.Background(), data)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println(data.Properties.Title)
 		}
-
-		data, err := c.grabber.GetEarthquakeData(id)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		data, err = c.RecordDisaster(context.Background(), data)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Println(data.Properties.Title)
 	}
 
 	// FILTER
 	params := &twitter.StreamFilterParams{
-		Follow:[]string{"94119095"},
+		Follow:        []string{"94119095"},
 		StallWarnings: twitter.Bool(true),
 	}
 	stream, err := c.listener.Streams.Filter(params)
@@ -156,7 +165,7 @@ func (c *Camar) ListenTheEarth() {
 }
 
 // getEarthquakeEventID is a function that will get the Earthquake event id from link that is shared.
-func (c *Camar) getEarthquakeEventID(link string) (string, error){
+func (c *Camar) getEarthquakeEventID(link string) (string, error) {
 	resp, err := http.Get(link)
 	if err != nil {
 		return "", errors.Wrap(err, "get earthquake ID error")
@@ -167,7 +176,7 @@ func (c *Camar) getEarthquakeEventID(link string) (string, error){
 	finalURL := resp.Request.URL.String()
 	split := strings.Split(finalURL, "/")
 
-	return split[len(split) - 1], nil
+	return split[len(split)-1], nil
 }
 
 // RecordDisaster is a function to save Disaster into our database.
@@ -183,7 +192,7 @@ func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) 
 
 // AlertDisastrousEvent is a function to alert service's device.
 func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error {
-	alertMessage, err := c.writer.CreateAlertMessage(disaster)
+	alertMessage, err := c.writer.CreateAlertMessage(disaster, []string{})
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on creating alert message")
 	}
@@ -194,7 +203,8 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 	}
 
 	for _, device := range devices {
-		if err = c.alerting.SendAlert(alertMessage, device); err != nil {
+		alertMessage.Token = device.Token
+		if err = c.alerting.SendAlert(alertMessage); err != nil {
 			return errors.Wrap(err, "AlertDisastrousEvent error on sending alert message")
 		}
 	}
