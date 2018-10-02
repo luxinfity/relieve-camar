@@ -33,14 +33,7 @@ type DisasterReporter interface {
 // ResourceGrabber is the bussiness logic contract for getting earthquake data.
 type ResourceGrabber interface {
 	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
-	GetEarthquakeData(eventID string)
-}
-
-// Alerting is the bussiness logic contract for alerting service.
-// the main idea is to send alert to all device.
-type Alerting interface {
-	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(alert string, device Device) error
+	GetEarthquakeData(eventID string) (datamodel.GeoJSON, error)
 }
 
 // Recorder is the business logic contract for saving data.
@@ -57,6 +50,14 @@ type Recorder interface {
 	GetDeviceInRadius(disasterCoordinate []float64, radius float64) ([]Device, error)
 }
 
+// Alerting is the business logic contract for alerting service.
+// the main idea is to send alert to all device.
+type Alerting interface {
+	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
+	SendAlert(alert string, device Device) error
+}
+
+// AlerWritter is the business logic contract for alert message writter.
 type AlertWritter interface {
 	// CreateAlertMessage is a function to create alert message based on th disaster event that currently occurs.
 	CreateAlertMessage(disaster datamodel.GeoJSON) (string, error)
