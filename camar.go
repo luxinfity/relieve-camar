@@ -5,20 +5,20 @@ package camar
 
 import (
 	"context"
-
-	"github.com/globalsign/mgo/bson"
-	"github.com/pkg/errors"
-
-	"firebase.google.com/go/messaging"
-	"fmt"
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/pamungkaski/camar/datamodel"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+	"fmt"
+
+	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
+	"firebase.google.com/go/messaging"
+	"github.com/dghubble/go-twitter/twitter"
+
+	"github.com/pamungkaski/camar/datamodel"
 )
 
 // DisasterReporter is the business logic contract for camar service.

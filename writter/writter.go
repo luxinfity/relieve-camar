@@ -1,9 +1,11 @@
 package writter
 
 import (
+
+	"strings"
+
 	"firebase.google.com/go/messaging"
 	"github.com/pamungkaski/camar/datamodel"
-	"strings"
 )
 
 type Alerter struct{}
