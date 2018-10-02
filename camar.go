@@ -10,6 +10,14 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/pamungkaski/camar/datamodel"
+	"github.com/dghubble/go-twitter/twitter"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"log"
+	"strings"
+	"net/http"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -17,7 +25,7 @@ import (
 type DisasterReporter interface {
 	// ListenTheEarth is a function that Listen to any Earthquake happen.
 	// It is the main function of DisasterReporter Interface
-	ListenTheEarth(ctx context.Context)
+	ListenTheEarth()
 	// RecordDisaster is a function to save Disaster into our database.
 	RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
 	// AlertDisastrousEvent is a function to alert service's device.
@@ -80,22 +88,86 @@ type Device struct {
 // Camar implements DisasterReporter interface.
 // It contains alerting and recording interface implementation.
 type Camar struct {
-	alerting  Alerting
-	recording Recorder
-	writer    AlertWritter
+	listener *twitter.Client
 	grabber   ResourceGrabber
+	recording Recorder
+	alerting  Alerting
+	writer    AlertWritter
 }
-
-func NewDisasterReporter(recorder Recorder) DisasterReporter {
+// NewDisasterReporter is a function that creates an instance of DisasterReporter.
+func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber) DisasterReporter {
 	return &Camar{
+		listener: client,
 		recording: recorder,
+		grabber: grabber,
 	}
 }
 
 // ListenTheEarth is a function that Listen to any Earthquake happen.
 // It is the main function of DisasterReporter Interface
-func (c *Camar) ListenTheEarth(ctx context.Context) {
+func (c *Camar) ListenTheEarth() {
+	fmt.Println("Starting Stream...")
 
+	// Convenience Demux demultiplexed stream messages
+	demux := twitter.NewSwitchDemux()
+	demux.Tweet = func(tweet *twitter.Tweet) {
+		text := tweet.Text
+		splitted := strings.Split(text, " ")
+		textLength := len(splitted)
+
+		id, err := c.getEarthquakeEventID(splitted[textLength - 1])
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		data, err := c.grabber.GetEarthquakeData(id)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		data, err = c.RecordDisaster(context.Background(), data)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(data.Properties.Title)
+	}
+
+	// FILTER
+	params := &twitter.StreamFilterParams{
+		Follow:[]string{"94119095"},
+		StallWarnings: twitter.Bool(true),
+	}
+	stream, err := c.listener.Streams.Filter(params)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Receive messages until stopped or stream quits
+	go demux.HandleChan(stream.Messages)
+
+	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	log.Println(<-ch)
+
+	fmt.Println("Stopping Stream...")
+	stream.Stop()
+}
+
+// getEarthquakeEventID is a function that will get the Earthquake event id from link that is shared.
+func (c *Camar) getEarthquakeEventID(link string) (string, error){
+	resp, err := http.Get(link)
+	if err != nil {
+		return "", errors.Wrap(err, "get earthquake ID error")
+	}
+
+	// Your magic function. The Request in the Response is the last URL the
+	// client tried to access.
+	finalURL := resp.Request.URL.String()
+	split := strings.Split(finalURL, "/")
+
+	return split[len(split) - 1], nil
 }
 
 // RecordDisaster is a function to save Disaster into our database.

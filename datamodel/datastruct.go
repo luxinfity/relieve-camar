@@ -17,7 +17,7 @@ type GeoJSON struct {
 		Tz       int         `json:"tz"`
 		URL      string      `json:"url"`
 		Felt     int         `json:"felt"`
-		Cdi      int         `json:"cdi"`
+		Cdi      float64         `json:"cdi"`
 		Mmi      float64     `json:"mmi"`
 		Alert    string      `json:"alert"`
 		Status   string      `json:"status"`
