@@ -2,22 +2,58 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/alecthomas/template"
-  packages = [".","parse"]
-  revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
+  name = "cloud.google.com/go"
+  packages = ["compute/metadata"]
+  revision = "97efc2c9ffd9fe8ef47f7f3203dc60bbca547374"
+  version = "v0.28.0"
+
+[[projects]]
+  name = "firebase.google.com/go"
+  packages = ["internal","messaging"]
+  revision = "a291d339beb944a2f216732bb910e800291bc371"
+  version = "v3.4.0"
+
+[[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "2ea60e5f094469f9e65adb9cd103795b73ae743e"
+  version = "v2.0.0"
 
 [[projects]]
   branch = "master"
-  name = "github.com/alecthomas/units"
+  name = "github.com/dghubble/go-twitter"
+  packages = ["twitter"]
+  revision = "a34e9059cd58e96429cee9c8a87fd8d907da6843"
+
+[[projects]]
+  name = "github.com/dghubble/oauth1"
   packages = ["."]
-  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
+  revision = "70562a5920ad9b6ff03ef697c0f90ae569abbd2b"
+  version = "v0.4.0"
+
+[[projects]]
+  name = "github.com/dghubble/sling"
+  packages = ["."]
+  revision = "eb56e89ac5088bebb12eef3cb4b293300f43608b"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/globalsign/mgo"
   packages = [".","bson","internal/json","internal/sasl","internal/scram"]
   revision = "1ca0a4f7cbcbe61c005d1bd43fdd8bb8b71df6bc"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto","ptypes","ptypes/any","ptypes/duration","ptypes/timestamp"]
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
+
+[[projects]]
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "44c6ddd0a2342c386950e880b658017258da92fc"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/joho/godotenv"
@@ -32,50 +68,68 @@
   version = "v1.1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/konsorten/go-windows-terminal-sequences"
-  packages = ["."]
-  revision = "b729f2633dfe35f4d1d8a32385f6685610ce1cb5"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/prometheus/common"
-  packages = ["log"]
-  revision = "c7de2306084e37d54b8be01f3541a8464345e9a5"
-
-[[projects]]
-  name = "github.com/sirupsen/logrus"
-  packages = ["."]
-  revision = "a67f783a3814b8729bd2dac5780b5f78f8dbd64d"
-  version = "v1.1.0"
+  name = "go.opencensus.io"
+  packages = [".","internal","internal/tagencoding","plugin/ocgrpc","plugin/ochttp","plugin/ochttp/propagation/b3","stats","stats/internal","stats/view","tag","trace","trace/internal","trace/propagation","trace/tracestate"]
+  revision = "79993219becaa7e29e3b60cb67f5b8e82dee11d6"
+  version = "v0.17.0"
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  revision = "e3636079e1a4c1f337f212cc5cd2aca108f6c900"
+  name = "golang.org/x/net"
+  packages = ["context","context/ctxhttp","http/httpguts","http2","http2/hpack","idna","internal/timeseries","trace"]
+  revision = "4dfa2610cdf3b287375bbba5b8f2a14d3b01d8de"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/oauth2"
+  packages = [".","google","internal","jws","jwt"]
+  revision = "d2e6202438beef2727060aa7cabdd924d92ebfd9"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows","windows/registry","windows/svc/eventlog"]
+  packages = ["unix"]
   revision = "e4b3c5e9061176387e7cea65e4dc5853801f3fb7"
 
 [[projects]]
-  name = "gopkg.in/alecthomas/kingpin.v2"
-  packages = ["."]
-  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
-  version = "v2.2.6"
+  name = "golang.org/x/text"
+  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/api"
+  packages = ["googleapi/transport","internal","option","transport","transport/grpc","transport/http","transport/http/internal/propagation"]
+  revision = "5da02d31af7d15cc65a207f8a46a6e3c50d41178"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = [".","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/modules","internal/remote_api","internal/socket","internal/urlfetch","socket","urlfetch"]
+  revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  revision = "c7e5094acea1ca1b899e2259d80a6b0f882f81f8"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [".","balancer","balancer/base","balancer/roundrobin","codes","connectivity","credentials","credentials/oauth","encoding","encoding/proto","grpclog","internal","internal/backoff","internal/channelz","internal/envconfig","internal/grpcrand","internal/transport","keepalive","metadata","naming","peer","resolver","resolver/dns","resolver/passthrough","stats","status","tap"]
+  revision = "8dea3dc473e90c8179e519d91302d0597c0ca1d1"
+  version = "v1.15.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fcdd3c7bd9dfc0f3f45d1d64ad6e554d165ec8c59a13b8a4c9f1e348c4b6de79"
+  inputs-digest = "88bcd47941c98d9935cf1aab3470e6dfd870b80582169a14807cb827d22eedf4"
   solver-name = "gps-cdcl"
   solver-version = 1
