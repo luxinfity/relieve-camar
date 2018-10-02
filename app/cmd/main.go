@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/pamungkaski/camar/recorder"
-	"github.com/prometheus/common/log"
-	"os"
 	"github.com/pamungkaski/camar"
 	"github.com/pamungkaski/camar/handler"
+	"github.com/pamungkaski/camar/recorder"
+	"github.com/prometheus/common/log"
 	"net/http"
+	"os"
 )
 
 func main() {

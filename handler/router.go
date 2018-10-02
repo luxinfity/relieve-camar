@@ -2,17 +2,18 @@ package handler
 
 import (
 	"github.com/pamungkaski/camar"
+
 	"github.com/julienschmidt/httprouter"
 )
 
 // Handler is a struct that handles http endpoint.
-type Handler struct{
+type Handler struct {
 	camar camar.DisasterReporter
 }
 
 func NewRouter(camar camar.DisasterReporter) *httprouter.Router {
 	handler := Handler{
-		camar:camar,
+		camar: camar,
 	}
 
 	router := httprouter.New()

@@ -2,20 +2,80 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/alecthomas/template"
+  packages = [".","parse"]
+  revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/alecthomas/units"
+  packages = ["."]
+  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/globalsign/mgo"
+  packages = [".","bson","internal/json","internal/sasl","internal/scram"]
+  revision = "1ca0a4f7cbcbe61c005d1bd43fdd8bb8b71df6bc"
+
+[[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/julienschmidt/httprouter"
+  packages = ["."]
+  revision = "8c199fb6259ffc1af525cc3ad52ee60ba8359669"
+  version = "v1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  revision = "b729f2633dfe35f4d1d8a32385f6685610ce1cb5"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/mgo.v2"
-  packages = ["bson","internal/json"]
-  revision = "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
+  branch = "master"
+  name = "github.com/prometheus/common"
+  packages = ["log"]
+  revision = "c7de2306084e37d54b8be01f3541a8464345e9a5"
+
+[[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "a67f783a3814b8729bd2dac5780b5f78f8dbd64d"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  revision = "e3636079e1a4c1f337f212cc5cd2aca108f6c900"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix","windows","windows/registry","windows/svc/eventlog"]
+  revision = "e4b3c5e9061176387e7cea65e4dc5853801f3fb7"
+
+[[projects]]
+  name = "gopkg.in/alecthomas/kingpin.v2"
+  packages = ["."]
+  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
+  version = "v2.2.6"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ca3152f8e6b1d3f2012d582e4fa0b4022b01c44592c51924ea8ec7be627078f1"
+  inputs-digest = "fcdd3c7bd9dfc0f3f45d1d64ad6e554d165ec8c59a13b8a4c9f1e348c4b6de79"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -9,7 +9,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 
-
 	"github.com/pamungkaski/camar/datamodel"
 )
 
@@ -63,17 +62,16 @@ type AlertWritter interface {
 	CreateAlertMessage(disaster datamodel.GeoJSON) (string, error)
 }
 
-
 // Device is the struct for each device conected to service.
 // It save the DeviceID for alerting purpose.
 // In device side, it is an automatics Device Regist on first start.
 // The Latitude and Longitude are update-able.
 type Device struct {
-	ID         bson.ObjectId `bson:"_id" json:"id"`
-	DeviceID string `json:"device_id"`
-	Location struct{
-		Type string `json:"type"`
-		Coordinates []float64    `json:"coordinates"`
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	DeviceID string        `json:"device_id"`
+	Location struct {
+		Type        string    `json:"type"`
+		Coordinates []float64 `json:"coordinates"`
 	} `json:"location"`
 }
 
@@ -87,9 +85,9 @@ type Camar struct {
 	grabber   ResourceGrabber
 }
 
-func NewDisasterReporter(recorder Recorder) DisasterReporter{
+func NewDisasterReporter(recorder Recorder) DisasterReporter {
 	return &Camar{
-		recording:recorder,
+		recording: recorder,
 	}
 }
 
@@ -148,14 +146,13 @@ func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
 func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) {
-	device, err := c.recording.GetDevice(deviceid);
+	device, err := c.recording.GetDevice(deviceid)
 	if err != nil {
 		return Device{}, err
 	}
 
 	return device, nil
 }
-
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
 func (c *Camar) UpdateDevice(ctx context.Context, device Device) (Device, error) {

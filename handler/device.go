@@ -1,12 +1,14 @@
 package handler
 
 import (
-	"net/http"
-	"github.com/pamungkaski/camar"
-	"encoding/json"
 	"context"
-	"github.com/julienschmidt/httprouter"
+	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/julienschmidt/httprouter"
+
+	"github.com/pamungkaski/camar"
 )
 
 // RegisterDevice is used to control the flow of POST /device endpoint

@@ -2,10 +2,10 @@ package recorder
 
 import (
 	"fmt"
-	"log"
 	"github.com/globalsign/mgo"
-	"github.com/pkg/errors"
 	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
+	"log"
 
 	"github.com/pamungkaski/camar"
 	"github.com/pamungkaski/camar/datamodel"
@@ -117,4 +117,3 @@ func (m *MongoDB) GetDeviceInRadius(disasterCoordinate []float64, radius float64
 
 	return results, nil
 }
-
