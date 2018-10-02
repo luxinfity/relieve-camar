@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/pamungkaski/camar"
+	"github.com/pamungkaski/camar/handler"
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/prometheus/common/log"
+	"net/http"
 	"os"
-	"github.com/pamungkaski/camar"
-	"github.com/globalsign/mgo/bson"
 )
 
 func main() {
@@ -23,26 +24,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//usgs := grabber.NewGrabber("https://earthquake.usgs.gov/fdsnws/event/1/query", client.NewClient())
-	//
-	//data, err := usgs.GetEarthquakeData("us2000ha1k")
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//data.BsonID = bson.NewObjectId()
-	Coordinate :=[]float64{120.2015625, -7.6078738}
-	dev := camar.Device{
-		ID: bson.NewObjectId(),
-		DeviceID: "samsok",
-	}
-	dev.Location.Type = "Point"
-	dev.Location.Coordinates = Coordinate
-	mg.NewDevice(dev)
+	cam := camar.NewDisasterReporter(mg)
 
-	//fmt.Println(Coordinate)
-	res, err := mg.GetDeviceInRadius(Coordinate, 1.36)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(res)
+	route := handler.NewRouter(cam)
+
+	log.Fatal(http.ListenAndServe(":8080", route))
 }

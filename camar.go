@@ -7,8 +7,9 @@ import (
 	"context"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/pamungkaski/camar/datamodel"
 	"github.com/pkg/errors"
+
+	"github.com/pamungkaski/camar/datamodel"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -23,6 +24,8 @@ type DisasterReporter interface {
 	AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error
 	// NewDevice is a function to save new device device for alerting purpose.
 	NewDevice(ctx context.Context, device Device) (Device, error)
+	// GetDevice
+	GetDevice(ctx context.Context, deviceID string) (Device, error)
 	// UpdateDevice is a function to update device latitude and longitude coordinate.
 	UpdateDevice(ctx context.Context, device Device) (Device, error)
 }
@@ -46,6 +49,8 @@ type Recorder interface {
 	SaveDisaster(disaster datamodel.GeoJSON) error
 	// SaveDevice is a function to register device on the alerting service.
 	NewDevice(device Device) error
+	//
+	GetDevice(deviceID string) (Device, error)
 	// UpdateDevice is a function to update device latitude and longitude coordinate.
 	UpdateDevice(device Device) error
 	// GetDeviceInRadius is a function to get all Device data inside the Disastrous Zone Radius.
@@ -57,18 +62,16 @@ type AlertWritter interface {
 	CreateAlertMessage(disaster datamodel.GeoJSON) (string, error)
 }
 
-
-
 // Device is the struct for each device conected to service.
 // It save the DeviceID for alerting purpose.
 // In device side, it is an automatics Device Regist on first start.
 // The Latitude and Longitude are update-able.
 type Device struct {
-	ID         bson.ObjectId `bson:"_id" json:"id"`
-	DeviceID string `json:"device_id"`
-	Location struct{
-		Type string `json:"type"`
-		Coordinates []float64    `json:"coordinates"`
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	DeviceID string        `json:"device_id"`
+	Location struct {
+		Type        string    `json:"type"`
+		Coordinates []float64 `json:"coordinates"`
 	} `json:"location"`
 }
 
@@ -82,6 +85,12 @@ type Camar struct {
 	grabber   ResourceGrabber
 }
 
+func NewDisasterReporter(recorder Recorder) DisasterReporter {
+	return &Camar{
+		recording: recorder,
+	}
+}
+
 // ListenTheEarth is a function that Listen to any Earthquake happen.
 // It is the main function of DisasterReporter Interface
 func (c *Camar) ListenTheEarth(ctx context.Context) {
@@ -93,7 +102,7 @@ func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) 
 	disaster.BsonID = bson.NewObjectId()
 
 	if err := c.recording.SaveDisaster(disaster); err != nil {
-		return datamodel.GeoJSON{}, errors.Wrap(err, "RecordDisaster error on saving disaster")
+		return datamodel.GeoJSON{}, err
 	}
 
 	return disaster, nil
@@ -122,10 +131,24 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 
 // NewDevice is a function to save new device device for alerting purpose.
 func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
-	device.ID = bson.NewObjectId()
+	dev, err := c.recording.GetDevice(device.DeviceID)
+	if err != nil {
+		device.ID = bson.NewObjectId()
+		if err := c.recording.NewDevice(device); err != nil {
+			return Device{}, err
+		}
 
-	if err := c.recording.NewDevice(device); err != nil {
-		return Device{}, errors.Wrap(err, "NewDevice error on creating new device")
+		return device, nil
+	}
+
+	return dev, nil
+}
+
+// UpdateDevice is a function to update device latitude and logitude coordinate.
+func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) {
+	device, err := c.recording.GetDevice(deviceid)
+	if err != nil {
+		return Device{}, err
 	}
 
 	return device, nil
@@ -133,9 +156,14 @@ func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
 func (c *Camar) UpdateDevice(ctx context.Context, device Device) (Device, error) {
-	if err := c.recording.UpdateDevice(device); err != nil {
-		return Device{}, errors.Wrap(err, "NewDevice error on creating new device")
+	dev, err := c.recording.GetDevice(device.DeviceID)
+	if err != nil {
+		return dev, err
+	}
+	dev.Location = device.Location
+	if err := c.recording.UpdateDevice(dev); err != nil {
+		return Device{}, err
 	}
 
-	return device, nil
+	return dev, nil
 }

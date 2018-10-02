@@ -3,11 +3,12 @@ package recorder
 import (
 	"fmt"
 	"github.com/globalsign/mgo"
-	"github.com/pamungkaski/camar/datamodel"
+	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
 	"log"
+
 	"github.com/pamungkaski/camar"
-	"github.com/globalsign/mgo/bson"
+	"github.com/pamungkaski/camar/datamodel"
 )
 
 type MongoDB struct {
@@ -55,7 +56,7 @@ func (m *MongoDB) SaveDisaster(disaster datamodel.GeoJSON) error {
 	dbAct := m.session.DB("camar").C("earthquake")
 	err := dbAct.Insert(disaster)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SaveDisaster error")
 	}
 	return nil
 }
@@ -65,9 +66,23 @@ func (m *MongoDB) NewDevice(device camar.Device) error {
 	dbAct := m.session.DB("camar").C("user")
 	err := dbAct.Insert(device)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "NewDevice error")
 	}
 	return nil
+}
+
+//
+func (m *MongoDB) GetDevice(deviceID string) (camar.Device, error) {
+	var dev camar.Device
+	query := bson.M{
+		"deviceid": deviceID,
+	}
+	dbAct := m.session.DB("camar").C("user")
+	err := dbAct.Find(query).One(&dev)
+	if err != nil {
+		return dev, errors.Wrap(err, "GetDevice error")
+	}
+	return dev, nil
 }
 
 // UpdateDevice is a function to update device latitude and longitude coordinate.
@@ -75,7 +90,7 @@ func (m *MongoDB) UpdateDevice(device camar.Device) error {
 	dbAct := m.session.DB("camar").C("user")
 	err := dbAct.UpdateId(device.ID, device)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "UpdateDevice error")
 	}
 	return nil
 }
@@ -97,9 +112,8 @@ func (m *MongoDB) GetDeviceInRadius(disasterCoordinate []float64, radius float64
 	dbAct := m.session.DB("camar").C("user")
 	err := dbAct.Find(query).All(&results)
 	if err != nil {
-		return results, err
+		return results, errors.Wrap(err, "GetDeviceInRadius error")
 	}
 
 	return results, nil
 }
-
