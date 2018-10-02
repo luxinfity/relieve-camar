@@ -33,7 +33,7 @@ func main() {
 	//go http.ListenAndServe(":8080", route)
 	//
 	//cam.ListenTheEarth()
-	a := writter.Alerter{}
+	a := writter.Writer{}
 	s := "Prelim M5.7 Earthquake Indian Ocean Triple Junction Oct-01 18:16 UTC, updates https://go.usa.gov/xPBNT"
 	spl := strings.Split(s, " ")
 	a.CreateAlertMessage(datamodel.GeoJSON{}, spl)

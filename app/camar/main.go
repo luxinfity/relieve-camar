@@ -1,16 +1,20 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/joho/godotenv"
+
 	"github.com/pamungkaski/camar"
 	"github.com/pamungkaski/camar/client"
 	"github.com/pamungkaski/camar/grabber"
 	"github.com/pamungkaski/camar/handler"
 	"github.com/pamungkaski/camar/listener"
 	"github.com/pamungkaski/camar/recorder"
-	"log"
-	"net/http"
-	"os"
+	"github.com/pamungkaski/camar/alerter"
+	"github.com/pamungkaski/camar/writter"
 )
 
 func main() {
@@ -32,7 +36,9 @@ func main() {
 
 	usgs := grabber.NewGrabber("https://earthquake.usgs.gov/fdsnws/event/1/query", client.NewClient())
 
-	cam := camar.NewDisasterReporter(twit, mg, usgs, 94119095)
+	fcm := alerter.NewAlerter()
+
+	cam := camar.NewDisasterReporter(twit, mg, usgs, 94119095, &writter.Writer{}, fcm)
 
 	route := handler.NewRouter(cam)
 

@@ -5,20 +5,21 @@ package camar
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"fmt"
 
-	"github.com/globalsign/mgo/bson"
-	"github.com/pkg/errors"
 	"firebase.google.com/go/messaging"
 	"github.com/dghubble/go-twitter/twitter"
+	"github.com/globalsign/mgo/bson"
+	"github.com/pkg/errors"
 
 	"github.com/pamungkaski/camar/datamodel"
+	"sync"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -63,13 +64,13 @@ type Recorder interface {
 // the main idea is to send alert to all device.
 type Alerting interface {
 	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(alert *messaging.Message) error
+	SendAlert(alert messaging.Message, errc chan []error, wg *sync.WaitGroup)
 }
 
 // AlerWritter is the business logic contract for alert message writter.
 type AlertWritter interface {
 	// CreateAlertMessage is a function to create alert message based on th disaster event that currently occurs.
-	CreateAlertMessage(disaster datamodel.GeoJSON, alerts []string) (*messaging.Message, error)
+	CreateAlertMessage(disaster datamodel.GeoJSON, alerts []string) (messaging.Message, error)
 }
 
 // Device is the struct for each device conected to service.
@@ -99,12 +100,14 @@ type Camar struct {
 }
 
 // NewDisasterReporter is a function that creates an instance of DisasterReporter.
-func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber, twitterID int64) DisasterReporter {
+func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber, twitterID int64, writer AlertWritter, alerter Alerting) DisasterReporter {
 	return &Camar{
 		listener:      client,
 		recording:     recorder,
 		grabber:       grabber,
 		usgsTwitterID: twitterID,
+		writer:writer,
+		alerting:alerter,
 	}
 }
 
@@ -192,21 +195,40 @@ func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) 
 
 // AlertDisastrousEvent is a function to alert service's device.
 func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error {
+	var errs []error
+	var wg sync.WaitGroup
+	errc := make(chan []error)
+
 	alertMessage, err := c.writer.CreateAlertMessage(disaster, []string{})
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on creating alert message")
 	}
 
-	devices, err := c.recording.GetDeviceInRadius(disaster.Geometry.Coordinates, 150)
+	devices, err := c.recording.GetDeviceInRadius(disaster.Geometry.Coordinates, 1.36)
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on getting device in radius")
 	}
 
+	length := len(devices)
+	wg.Add(length)
+
 	for _, device := range devices {
 		alertMessage.Token = device.Token
-		if err = c.alerting.SendAlert(alertMessage); err != nil {
-			return errors.Wrap(err, "AlertDisastrousEvent error on sending alert message")
+		go c.alerting.SendAlert(alertMessage, errc, &wg)
+	}
+
+	for i := 0; i < length; i++ {
+		errsx := <-errc
+		lenErrsx := len(errsx)
+		if lenErrsx > 0 {
+			errs = append(errs, errsx...)
 		}
+	}
+
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
