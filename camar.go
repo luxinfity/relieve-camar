@@ -240,7 +240,6 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 
 // NewDevice is a function to save new device device for alerting purpose.
 func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
-	fmt.Println("Endpoint Hit: Create New Device")
 	dev, err := c.recording.GetDevice(device.DeviceID)
 	if err != nil {
 		device.ID = bson.NewObjectId()
@@ -256,7 +255,6 @@ func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
 func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) {
-	fmt.Println("Endpoint Hit: Get Device")
 	device, err := c.recording.GetDevice(deviceid)
 	if err != nil {
 		return Device{}, err
@@ -267,7 +265,6 @@ func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) 
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
 func (c *Camar) UpdateDevice(ctx context.Context, device Device) (Device, error) {
-	fmt.Println("Endpoint Hit: Update Device")
 	dev, err := c.recording.GetDevice(device.DeviceID)
 	if err != nil {
 		return dev, err

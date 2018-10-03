@@ -13,6 +13,7 @@ import (
 
 // RegisterDevice is used to control the flow of POST /device endpoint
 func (h *Handler) RegisterDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Println("Endpoint Hit: Create New Device")
 	var device camar.Device
 
 	w.Header().Set("Content-Type", "application/json")
@@ -37,6 +38,7 @@ func (h *Handler) RegisterDevice(w http.ResponseWriter, r *http.Request, ps http
 
 // Healthz is used to control the flow of GET /device endpoint
 func (h *Handler) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Println("Endpoint Hit: Get Device")
 	w.Header().Set("Content-Type", "application/json")
 	deviceID := ps.ByName("id")
 
@@ -59,6 +61,7 @@ func (h *Handler) GetDevice(w http.ResponseWriter, r *http.Request, ps httproute
 
 // Metric is used to control the flow of GET /metrics endpoint
 func (h *Handler) UpdateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Println("Endpoint Hit: Update Device")
 	var device camar.Device
 
 	w.Header().Set("Content-Type", "application/json")

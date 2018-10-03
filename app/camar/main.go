@@ -47,5 +47,4 @@ func main() {
 	go http.ListenAndServe(fmt.Sprintf(":%s", runningPort), route)
 
 	cam.ListenTheEarth()
-
 }
