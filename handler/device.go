@@ -42,6 +42,11 @@ func (h *Handler) GetDevice(w http.ResponseWriter, r *http.Request, ps httproute
 
 	device, err := h.camar.GetDevice(context.Background(), deviceID)
 	if err != nil {
+		if device.ID == "" {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(err)
+			return
+		}
 		w.WriteHeader(http.StatusServiceUnavailable)
 		json.NewEncoder(w).Encode(err)
 		return
