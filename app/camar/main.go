@@ -15,6 +15,7 @@ import (
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/pamungkaski/camar/alerter"
 	"github.com/pamungkaski/camar/writter"
+	"fmt"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	apiKeySecret := os.Getenv("API_KEY_SECRET")
 	accessToken := os.Getenv("ACCESS_TOKEN")
 	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
+	runningPort := os.Getenv("RUNNING_PORT")
 
 	mg, err := recorder.NewMongoDB(username, password, host)
 	if err != nil {
@@ -42,7 +44,7 @@ func main() {
 
 	route := handler.NewRouter(cam)
 
-	go http.ListenAndServe(":8080", route)
+	go http.ListenAndServe(fmt.Sprintf(":%s", runningPort), route)
 
 	cam.ListenTheEarth()
 
