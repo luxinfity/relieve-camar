@@ -30,6 +30,8 @@ type DisasterReporter interface {
 	ListenTheEarth()
 	// RecordDisaster is a function to save Disaster into our database.
 	RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
+	//
+	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.EarthquakeDataSnapshoot, error)
 	// AlertDisastrousEvent is a function to alert service's device.
 	AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error
 	// NewDevice is a function to save new device device for alerting purpose.
@@ -44,12 +46,16 @@ type DisasterReporter interface {
 type ResourceGrabber interface {
 	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
 	GetEarthquakeData(eventID string) (datamodel.GeoJSON, error)
+	//
+	GetEarthquakeCountry(data datamodel.GeoJSON) (datamodel.CountryData, error)
 }
 
 // Recorder is the business logic contract for saving data.
 type Recorder interface {
 	// SaveDisaster is a function to save disaster data into database
 	SaveDisaster(disaster datamodel.GeoJSON) error
+	//
+	GetEarthquakeList(limit, page int) ([]datamodel.GeoJSON, error)
 	// SaveDevice is a function to register device on the alerting service.
 	NewDevice(device Device) error
 	//
@@ -136,15 +142,22 @@ func (c *Camar) ListenTheEarth() {
 				fmt.Println(err)
 			}
 
-			data, err = c.RecordDisaster(context.Background(), data)
+			country, err := c.grabber.GetEarthquakeCountry(data)
 			if err != nil {
 				fmt.Println(err)
 			}
 
-			fmt.Println(data.Properties.Title)
+			if country.CountryName == "Indonesia" {
+				data, err = c.RecordDisaster(context.Background(), data)
+				if err != nil {
+					fmt.Println(err)
+				}
 
-			if err := c.AlertDisastrousEvent(context.Background(), data); err != nil {
-				fmt.Println(err)
+				fmt.Println(data.Properties.Title)
+
+				if err := c.AlertDisastrousEvent(context.Background(), data); err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
@@ -184,6 +197,31 @@ func (c *Camar) getEarthquakeEventID(link string) (string, error) {
 	split := strings.Split(finalURL, "/")
 
 	return split[len(split)-1], nil
+}
+
+func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.EarthquakeDataSnapshoot, error) {
+	var list []datamodel.GeoJSON
+	var snapList []datamodel.EarthquakeDataSnapshoot
+
+	list, err := c.recording.GetEarthquakeList(limit, page)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, data := range list {
+		snap := datamodel.EarthquakeDataSnapshoot{
+			Title: data.Properties.Title,
+			Mag: data.Properties.Mag,
+			Depth: data.Properties.Products.Origin[0].Properties.Depth,
+			Place: data.Properties.Place,
+			Time: data.Properties.Time,
+			URL: data.URL,
+			Tsunami:data.Properties.Tsunami,
+		}
+		snapList =  append(snapList, snap)
+	}
+
+	return snapList, nil
 }
 
 // RecordDisaster is a function to save Disaster into our database.

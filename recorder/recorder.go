@@ -1,7 +1,6 @@
 package recorder
 
 import (
-	"fmt"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
@@ -39,16 +38,16 @@ func NewMongoDB(username, password, host string) (*MongoDB, error) {
 	}, nil
 }
 
-func (m *MongoDB) GetAllEarthquakeData() {
-	var results []interface{}
+func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.GeoJSON, error) {
+	var results []datamodel.GeoJSON
 
 	dbAct := m.session.DB("camar").C("earthquake")
-	err := dbAct.Find(nil).All(&results)
+	err := dbAct.Find(nil).Skip(limit*(page - 1)).Limit(limit).All(&results)
 	if err != nil {
 		log.Println(err)
-	} else {
-		fmt.Println("Results All :", results)
+		return nil, errors.Wrap(err, "Get List of Recent Earthquake")
 	}
+	return results, nil
 }
 
 // SaveDisaster is a function to save disaster data into database

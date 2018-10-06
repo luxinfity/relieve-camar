@@ -5,6 +5,22 @@ import (
 	"time"
 )
 
+
+type EarthquakeDataSnapshoot struct {
+	Title    string      `json:"title"`
+	URL      string      `json:"url"`
+	Mag      float64     `json:"mag"`
+	Depth            string    `json:"depth"`
+	Place    string      `json:"place"`
+	Time     int64       `json:"time"`
+	Tsunami  int         `json:"tsunami"`
+}
+type CountryData struct {
+	Languages   string `json:"languages"`
+	Distance    string `json:"distance"`
+	CountryCode string `json:"countryCode"`
+	CountryName string `json:"countryName"`
+} 
 // GeoJSONEarthquakeData is the main struct to wrap data from GeoJSON endpoint.
 type GeoJSON struct {
 	BsonID     bson.ObjectId `bson:"_id" json:"bson_id"`
