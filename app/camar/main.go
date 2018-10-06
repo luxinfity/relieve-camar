@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -15,7 +14,6 @@ import (
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/pamungkaski/camar/alerter"
 	"github.com/pamungkaski/camar/writter"
-	"fmt"
 )
 
 func main() {
@@ -44,7 +42,7 @@ func main() {
 
 	route := handler.NewRouter(cam)
 
-	go http.ListenAndServe(fmt.Sprintf(":%s", runningPort), route)
+	go route.Run(":" +runningPort)
 
 	cam.ListenTheEarth()
 }
