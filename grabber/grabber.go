@@ -93,9 +93,10 @@ func(u *USGS) GetEarthquakeCountry(earthquakeData datamodel.GeoJSON) (datamodel.
 	query.Add("lat", fmt.Sprintf("%f", earthquakeData.Geometry.Coordinates[1]))
 	query.Add("lng", fmt.Sprintf("%f", earthquakeData.Geometry.Coordinates[0]))
 	query.Add("username", "pamungkaski")
+	query.Add("radius", "150")
 
 	endpoint.RawQuery = query.Encode()
-	fmt.Println(endpoint.String())
+	//fmt.Println(endpoint.String())
 	req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
 	if err != nil {
 		return data, errors.Wrap(err, "failed to create geonames query")

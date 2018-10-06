@@ -59,6 +59,15 @@ func (m *MongoDB) SaveDisaster(disaster datamodel.GeoJSON) error {
 	}
 	return nil
 }
+// SaveDisaster is a function to save disaster data into database
+func (m *MongoDB) SaveInternationalDisaster(disaster datamodel.GeoJSON) error {
+	dbAct := m.session.DB("camar").C("earthquake-international")
+	err := dbAct.Insert(disaster)
+	if err != nil {
+		return errors.Wrap(err, "SaveInternationalDisaster error")
+	}
+	return nil
+}
 
 // SaveClient is a function to register client on the alerting service.
 func (m *MongoDB) NewDevice(device camar.Device) error {

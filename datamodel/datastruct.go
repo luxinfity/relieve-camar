@@ -10,7 +10,7 @@ type EarthquakeDataSnapshoot struct {
 	Title    string      `json:"title"`
 	URL      string      `json:"url"`
 	Mag      float64     `json:"mag"`
-	Depth            string    `json:"depth"`
+	Depth            float64    `json:"depth"`
 	Place    string      `json:"place"`
 	Time     int64       `json:"time"`
 	Tsunami  int         `json:"tsunami"`

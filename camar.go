@@ -30,6 +30,8 @@ type DisasterReporter interface {
 	ListenTheEarth()
 	// RecordDisaster is a function to save Disaster into our database.
 	RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
+	// RecordDisaster is a function to save Disaster into our database.
+	RecordInternationalDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
 	//
 	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.EarthquakeDataSnapshoot, error)
 	// AlertDisastrousEvent is a function to alert service's device.
@@ -54,6 +56,8 @@ type ResourceGrabber interface {
 type Recorder interface {
 	// SaveDisaster is a function to save disaster data into database
 	SaveDisaster(disaster datamodel.GeoJSON) error
+	// SaveDisaster is a function to save disaster data into database
+	SaveInternationalDisaster(disaster datamodel.GeoJSON) error
 	//
 	GetEarthquakeList(limit, page int) ([]datamodel.GeoJSON, error)
 	// SaveDevice is a function to register device on the alerting service.
@@ -158,6 +162,11 @@ func (c *Camar) ListenTheEarth() {
 				if err := c.AlertDisastrousEvent(context.Background(), data); err != nil {
 					fmt.Println(err)
 				}
+			} else {
+				data, err = c.RecordInternationalDisaster(context.Background(), data)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
@@ -212,7 +221,7 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 		snap := datamodel.EarthquakeDataSnapshoot{
 			Title: data.Properties.Title,
 			Mag: data.Properties.Mag,
-			Depth: data.Properties.Products.Origin[0].Properties.Depth,
+			Depth: data.Geometry.Coordinates[2],
 			Place: data.Properties.Place,
 			Time: data.Properties.Time,
 			URL: data.URL,
@@ -229,6 +238,16 @@ func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) 
 	disaster.BsonID = bson.NewObjectId()
 
 	if err := c.recording.SaveDisaster(disaster); err != nil {
+		return datamodel.GeoJSON{}, err
+	}
+
+	return disaster, nil
+}
+
+func (c *Camar) RecordInternationalDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error) {
+	disaster.BsonID = bson.NewObjectId()
+
+	if err := c.recording.SaveInternationalDisaster(disaster); err != nil {
 		return datamodel.GeoJSON{}, err
 	}
 
