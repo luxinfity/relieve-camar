@@ -42,7 +42,7 @@ func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.GeoJSON, error
 	var results []datamodel.GeoJSON
 
 	dbAct := m.session.DB("camar").C("earthquake")
-	err := dbAct.Find(nil).Skip(limit*(page - 1)).Limit(limit).All(&results)
+	err := dbAct.Find(nil).Sort("-properties.time").Skip(limit*(page - 1)).Limit(limit).All(&results)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "Get List of Recent Earthquake")
