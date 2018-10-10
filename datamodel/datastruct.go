@@ -13,6 +13,10 @@ type Response struct {
 type EarthquakeDataSnapshoot struct {
 	Title    string      `json:"title"`
 	URL      string      `json:"url"`
+	Location struct {
+		Type        string    `json:"type"`
+		Coordinates []float64 `json:"coordinates"`
+	} `json:"location"`
 	Mag      float64     `json:"mag"`
 	Depth            float64    `json:"depth"`
 	Place    string      `json:"place"`

@@ -220,6 +220,7 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 	for _, data := range list {
 		snap := datamodel.EarthquakeDataSnapshoot{
 			Title: data.Properties.Title,
+			Location: data.Geometry,
 			Mag: data.Properties.Mag,
 			Depth: data.Geometry.Coordinates[2],
 			Place: data.Properties.Place,
