@@ -266,7 +266,7 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 		return errors.Wrap(err, "AlertDisastrousEvent error on creating alert message")
 	}
 
-	devices, err := c.recording.GetDeviceInRadius(disaster.Geometry.Coordinates, 1.36)
+	devices, err := c.recording.GetDeviceInRadius([]float64{disaster.Geometry.Coordinates[0], disaster.Geometry.Coordinates[1]}, 1.36)
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on getting device in radius")
 	}
