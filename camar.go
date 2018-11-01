@@ -158,10 +158,10 @@ func (c *Camar) ListenTheEarth() {
 			}
 
 			if country.CountryName == "Indonesia" {
-				//data, err = c.RecordDisaster(context.Background(), data)
-				//if err != nil {
-				//	fmt.Println(err)
-				//}
+				data, err = c.RecordDisaster(context.Background(), data)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				fmt.Println(data.Properties.Title)
 
@@ -169,10 +169,10 @@ func (c *Camar) ListenTheEarth() {
 					fmt.Println(err)
 				}
 			} else {
-				//data, err = c.RecordInternationalDisaster(context.Background(), data)
-				//if err != nil {
-				//	fmt.Println(err)
-				//}
+				data, err = c.RecordInternationalDisaster(context.Background(), data)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
