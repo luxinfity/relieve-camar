@@ -129,6 +129,7 @@ func (c *Camar) ListenTheEarth() {
 	// Convenience Demux demultiplexed stream messages
 	demux := twitter.NewSwitchDemux()
 	demux.Tweet = func(tweet *twitter.Tweet) {
+		fmt.Println("Masuk")
 		if tweet.User.ID == c.usgsTwitterID {
 			// Get Shortened link of the event
 			text := tweet.Text
@@ -157,7 +158,7 @@ func (c *Camar) ListenTheEarth() {
 				//	fmt.Println(err)
 				//}
 
-				//fmt.Println(data.Properties.Title)
+				fmt.Println(data.Properties.Title)
 
 				if err := c.AlertDisastrousEvent(context.Background(), data); err != nil {
 					fmt.Println(err)
