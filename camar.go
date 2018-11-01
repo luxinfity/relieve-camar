@@ -43,6 +43,8 @@ type DisasterReporter interface {
 	GetDevice(ctx context.Context, deviceID string) (Device, error)
 	// UpdateDevice is a function to update device latitude and longitude coordinate.
 	UpdateDevice(ctx context.Context, device Device) (Device, error)
+	//
+	GetAllDevice(ctx context.Context)([]Device, error)
 }
 
 // ResourceGrabber is the bussiness logic contract for getting earthquake data.
@@ -69,6 +71,8 @@ type Recorder interface {
 	UpdateDevice(device Device) error
 	// GetDeviceInRadius is a function to get all Device data inside the Disastrous Zone Radius.
 	GetDeviceInRadius(disasterCoordinate []float64, radius float64) ([]Device, error)
+	//
+	GetAllDevice()([]Device, error)
 }
 
 // Alerting is the business logic contract for alerting service.
@@ -322,6 +326,16 @@ func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) 
 	}
 
 	return device, nil
+}
+
+// UpdateDevice is a function to update device latitude and logitude coordinate.
+func (c *Camar) GetAllDevice(ctx context.Context) ([]Device, error) {
+	devices, err := c.recording.GetAllDevice()
+	if err != nil {
+		return nil, err
+	}
+
+	return devices, nil
 }
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.

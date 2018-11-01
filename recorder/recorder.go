@@ -93,6 +93,17 @@ func (m *MongoDB) GetDevice(deviceID string) (camar.Device, error) {
 	return dev, nil
 }
 
+//
+func (m *MongoDB) GetAllDevice() ([]camar.Device, error) {
+	var dev []camar.Device
+	dbAct := m.session.DB("camar").C("user")
+	err := dbAct.Find(nil).All(&dev)
+	if err != nil {
+		return dev, errors.Wrap(err, "GetDevice error")
+	}
+	return dev, nil
+}
+
 // UpdateDevice is a function to update device latitude and longitude coordinate.
 func (m *MongoDB) UpdateDevice(device camar.Device) error {
 	dbAct := m.session.DB("camar").C("user")
