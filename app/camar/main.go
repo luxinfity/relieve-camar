@@ -14,6 +14,7 @@ import (
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/pamungkaski/camar/alerter"
 	"github.com/pamungkaski/camar/writter"
+	"strconv"
 )
 
 func main() {
@@ -26,11 +27,13 @@ func main() {
 	accessToken := os.Getenv("ACCESS_TOKEN")
 	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
 	runningPort := os.Getenv("RUNNING_PORT")
-
+	usgsUserIdString := os.Getenv("USGS_USER_ID")
 	mg, err := recorder.NewMongoDB(username, password, host)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	usgsUserId,_ := strconv.ParseInt(usgsUserIdString, 10, 64)
 
 	twit := listener.NewListener(apiKey, apiKeySecret, accessToken, accessTokenSecret)
 
@@ -38,7 +41,7 @@ func main() {
 
 	fcm := alerter.NewAlerter()
 
-	cam := camar.NewDisasterReporter(twit, mg, usgs, 94119095, &writter.Writer{}, fcm)
+	cam := camar.NewDisasterReporter(twit, mg, usgs, usgsUserId, &writter.Writer{}, fcm)
 
 	route := handler.NewRouter(cam)
 

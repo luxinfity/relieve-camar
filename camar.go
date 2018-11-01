@@ -20,6 +20,7 @@ import (
 
 	"github.com/pamungkaski/camar/datamodel"
 	"sync"
+	"strconv"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -171,10 +172,11 @@ func (c *Camar) ListenTheEarth() {
 			}
 		}
 	}
-
+	usgsStringId := strconv.FormatInt(c.usgsTwitterID, 10)
+	fmt.Println(usgsStringId)
 	// FILTER
 	params := &twitter.StreamFilterParams{
-		Follow:        []string{"94119095"},
+		Follow:        []string{usgsStringId},
 		StallWarnings: twitter.Bool(true),
 	}
 	stream, err := c.listener.Streams.Filter(params)
