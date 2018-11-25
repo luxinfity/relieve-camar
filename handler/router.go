@@ -24,7 +24,7 @@ func NewRouter(camar camar.DisasterReporter) *gin.Engine {
 	router.PUT("/device/:id", handler.UpdateDevice)
 
 	router.GET("/earthquakeList", handler.GetEarthquakeList)
-	router.GET("/earthquake/:id", handler.GetEarthquakeList)
+	router.GET("/earthquake/:id", handler.GetEarthquake)
 
 	router.GET("/", func(context *gin.Context) {
 		context.JSON(http.StatusOK, "CAMAR RUNNING")

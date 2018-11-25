@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	req, err := http.NewRequest(http.MethodGet, "http://dataweb.bmkg.go.id/inatews/gempaterkini.xml", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://dataweb.bmkg.go.id/inatews/gempadirasakan.xml", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,6 +29,6 @@ func main() {
 	}
 
 	for _, q := range data.Gempa {
-		fmt.Println(q.Wilayah)
+		fmt.Println(q.Dirasakan)
 	}
 }

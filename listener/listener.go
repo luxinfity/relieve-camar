@@ -31,6 +31,7 @@ func NewListener(cam camar.DisasterReporter, client *twitter.Client, twitterID i
 	}
 }
 
+// ListenToQuake
 func (l *Listener) ListenToQuake() {
 	fmt.Println("Starting Stream...")
 
@@ -44,10 +45,10 @@ func (l *Listener) ListenToQuake() {
 		}
 	}
 
-	usgsStringId := strconv.FormatInt(l.twitterID, 10)
+	bmkgStringId := strconv.FormatInt(l.twitterID, 10)
 	// FILTER
 	params := &twitter.StreamFilterParams{
-		Follow:        []string{usgsStringId},
+		Follow:        []string{bmkgStringId},
 		StallWarnings: twitter.Bool(true),
 	}
 

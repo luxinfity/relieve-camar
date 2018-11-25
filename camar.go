@@ -12,6 +12,7 @@ import (
 	"github.com/pamungkaski/camar/notifier"
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -63,16 +64,31 @@ func (c *Camar) ListenTheEarth() error {
 		return err
 	}
 	quakes, err := c.recorder.GetEarthquakeList(1, 1)
-
-	if !c.verifyQuake(latest[0], quakes[0]) {
-		if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
-			return err
-		}
-		if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
-			return err
-		}
+	if err != nil {
+		return nil
 	}
 
+	if len(latest) != 0{
+		if len(quakes) != 0 {
+			if !c.verifyQuake(latest[0], quakes[0]) {
+				fmt.Println(latest[0].Title)
+				if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
+					return err
+				}
+				if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
+					return err
+				}
+			}
+		} else {
+			fmt.Println(latest[0].Title)
+			if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
+				return err
+			}
+			if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -80,10 +96,10 @@ func (c *Camar) verifyQuake(first, second datamodel.CamarQuakeData) bool {
 	if first.Mag != second.Mag {
 		return false
 	}
-	if first.Time == second.Time {
+	if first.Time != second.Time {
 		return false
 	}
-	if first.Location.Coordinates[0] == first.Location.Coordinates[0] {
+	if first.Location.Coordinates[0] != first.Location.Coordinates[0] {
 		return false
 	}
 

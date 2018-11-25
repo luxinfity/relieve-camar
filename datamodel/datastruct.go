@@ -38,9 +38,9 @@ type CamarQuakeData struct {
 }
 
 type BMKGQuakes struct {
-	XMLName xml.Name        `xml:"Infogempa"`
-	Text    string          `xml:",chardata"`
-	Gempa   []BMKGQuakeData `xml:"gempa"`
+	XMLName xml.Name `xml:"Infogempa"`
+	Text    string   `xml:",chardata"`
+	Gempa   []BMKGQuakeData `xml:"Gempa"`
 }
 
 type BMKGQuakeData struct {

@@ -60,8 +60,8 @@ func (h *Handler) GetEarthquake(ctx *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		response.Data = err
-		response.Status = http.StatusServiceUnavailable
-		ctx.JSON(http.StatusServiceUnavailable, response)
+		response.Status = http.StatusNotFound
+		ctx.JSON(http.StatusNotFound, response)
 		return
 	}
 

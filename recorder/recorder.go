@@ -77,10 +77,10 @@ func (m *MongoDB) GetEarthquake(ID string) (datamodel.CamarQuakeData, error) {
 	query := bson.M{
 		"_id": id,
 	}
-	dbAct := m.session.DB("camar").C("user")
+	dbAct := m.session.DB("camar").C("earthquake")
 	err := dbAct.Find(query).One(&quake)
 	if err != nil {
-		return quake, errors.Wrap(err, "GetDevice error")
+		return quake, errors.Wrap(err, "Get Earthquake error")
 	}
 	return quake, nil
 }

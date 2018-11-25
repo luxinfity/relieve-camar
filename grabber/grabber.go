@@ -73,7 +73,10 @@ func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel
 		quake.Location.Coordinates = append(quake.Location.Coordinates, latitude)
 		quake.Mag = mag
 		quake.Depth = dep
-		quake.Place = gempa.Dirasakan
+		quake.Place = strings.Replace(gempa.Dirasakan, "\t", " ", -1)
+
+		quake.Title =  strings.Replace(quake.Title, "\t", " ", -1)
+		quake.Title =  strings.Replace(quake.Title, "  ", " ", -1)
 
 		data = append(data, quake)
 	}

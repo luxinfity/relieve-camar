@@ -42,7 +42,7 @@ func main() {
 	// Twitter client
 	twitClient := twitter.NewClient(httpClient)
 
-	grab := grabber.NewGrabber("http://dataweb.bmkg.go.id/inatews/gempaterkini.xml", client.NewClient())
+	grab := grabber.NewGrabber("http://dataweb.bmkg.go.id/inatews/gempadirasakan.xml", client.NewClient())
 
 	fcm := notifier.NewAlerter()
 
