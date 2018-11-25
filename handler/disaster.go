@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
-	"fmt"
-	"net/http"
 	"context"
-	"strconv"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/pamungkaski/camar/datamodel"
+	"net/http"
+	"strconv"
 )
 
 func (h *Handler) GetEarthquakeList(ctx *gin.Context) {
@@ -36,6 +36,27 @@ func (h *Handler) GetEarthquakeList(ctx *gin.Context) {
 	}
 
 	data, err := h.camar.GetEarthquakeList(context.Background(), limit, page)
+	if err != nil {
+		fmt.Println(err)
+		response.Data = err
+		response.Status = http.StatusServiceUnavailable
+		ctx.JSON(http.StatusServiceUnavailable, response)
+		return
+	}
+
+	response.Data = data
+	response.Status = http.StatusOK
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) GetEarthquake(ctx *gin.Context) {
+	fmt.Println("Endpoint Hit: Get earthquake")
+	ctx.Header("Content-Type", "application/json")
+	var response datamodel.Response
+
+	id := ctx.Param("id")
+
+	data, err := h.camar.GetEarthquake(context.Background(), id)
 	if err != nil {
 		fmt.Println(err)
 		response.Data = err

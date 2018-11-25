@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/pamungkaski/camar"
-	"github.com/gin-gonic/gin"
 	"context"
+	"github.com/gin-gonic/gin"
 	"github.com/pamungkaski/camar/datamodel"
 )
 
@@ -14,10 +13,10 @@ import (
 func (h *Handler) RegisterDevice(ctx *gin.Context) {
 	fmt.Println("Endpoint Hit: Create New Device")
 	var response datamodel.Response
-	var device camar.Device
+	var device datamodel.Device
 
 	ctx.Header("Content-Type", "application/json")
-	
+
 	if err := ctx.BindJSON(&device); err != nil {
 		response.Data = err
 		response.Status = http.StatusBadRequest
@@ -67,7 +66,6 @@ func (h *Handler) GetDevice(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-
 // Healthz is used to control the flow of GET /device endpoint
 func (h *Handler) GetAllDevice(ctx *gin.Context) {
 	fmt.Println("Endpoint Hit: Get All Device")
@@ -88,11 +86,10 @@ func (h *Handler) GetAllDevice(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-
 // Metric is used to control the flow of GET /metrics endpoint
 func (h *Handler) UpdateDevice(ctx *gin.Context) {
 	fmt.Println("Endpoint Hit: Update Device")
-	var device camar.Device
+	var device datamodel.Device
 	var response datamodel.Response
 
 	ctx.Header("Content-Type", "application/json")

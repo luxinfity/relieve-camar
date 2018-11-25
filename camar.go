@@ -5,22 +5,13 @@ package camar
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
 
-	"firebase.google.com/go/messaging"
-	"github.com/dghubble/go-twitter/twitter"
 	"github.com/globalsign/mgo/bson"
-	"github.com/pkg/errors"
-
 	"github.com/pamungkaski/camar/datamodel"
-	"sync"
-	"strconv"
+	"github.com/pamungkaski/camar/grabber"
+	"github.com/pamungkaski/camar/notifier"
+	"github.com/pamungkaski/camar/recorder"
+	"github.com/pkg/errors"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -28,262 +19,110 @@ import (
 type DisasterReporter interface {
 	// ListenTheEarth is a function that Listen to any Earthquake happen.
 	// It is the main function of DisasterReporter Interface
-	ListenTheEarth()
+	ListenTheEarth() error
 	// RecordDisaster is a function to save Disaster into our database.
-	RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
-	// RecordDisaster is a function to save Disaster into our database.
-	RecordInternationalDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error)
+	RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error
 	//
-	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.EarthquakeDataSnapshoot, error)
+	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, error)
 	// AlertDisastrousEvent is a function to alert service's device.
-	AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error
+	GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQuakeData, error)
+	AlertDisastrousEvent(ctx context.Context, disaster datamodel.CamarQuakeData) error
 	// NewDevice is a function to save new device device for alerting purpose.
-	NewDevice(ctx context.Context, device Device) (Device, error)
+	NewDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error)
 	// GetDevice
-	GetDevice(ctx context.Context, deviceID string) (Device, error)
+	GetDevice(ctx context.Context, deviceID string) (datamodel.Device, error)
 	// UpdateDevice is a function to update device latitude and longitude coordinate.
-	UpdateDevice(ctx context.Context, device Device) (Device, error)
+	UpdateDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error)
 	//
-	GetAllDevice(ctx context.Context)([]Device, error)
-}
-
-// ResourceGrabber is the bussiness logic contract for getting earthquake data.
-type ResourceGrabber interface {
-	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
-	GetEarthquakeData(eventID string) (datamodel.GeoJSON, error)
-	//
-	GetEarthquakeCountry(data datamodel.GeoJSON) (datamodel.CountryData, error)
-}
-
-// Recorder is the business logic contract for saving data.
-type Recorder interface {
-	// SaveDisaster is a function to save disaster data into database
-	SaveDisaster(disaster datamodel.GeoJSON) error
-	// SaveDisaster is a function to save disaster data into database
-	SaveInternationalDisaster(disaster datamodel.GeoJSON) error
-	//
-	GetEarthquakeList(limit, page int) ([]datamodel.GeoJSON, error)
-	// SaveDevice is a function to register device on the alerting service.
-	NewDevice(device Device) error
-	//
-	GetDevice(deviceID string) (Device, error)
-	// UpdateDevice is a function to update device latitude and longitude coordinate.
-	UpdateDevice(device Device) error
-	// GetDeviceInRadius is a function to get all Device data inside the Disastrous Zone Radius.
-	GetDeviceInRadius(disasterCoordinate []float64, radius float64) ([]Device, error)
-	//
-	GetAllDevice()([]Device, error)
-}
-
-// Alerting is the business logic contract for alerting service.
-// the main idea is to send alert to all device.
-type Alerting interface {
-	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(alert messaging.Message, errc chan []error, wg *sync.WaitGroup)
-}
-
-// AlerWritter is the business logic contract for alert message writter.
-type AlertWritter interface {
-	// CreateAlertMessage is a function to create alert message based on th disaster event that currently occurs.
-	CreateAlertMessage(disaster datamodel.GeoJSON, alerts []string) (messaging.Message, error)
-}
-
-// Device is the struct for each device conected to service.
-// It save the DeviceID for alerting purpose.
-// In device side, it is an automatics Device Regist on first start.
-// The Latitude and Longitude are update-able.
-type Device struct {
-	ID       bson.ObjectId `bson:"_id" json:"id"`
-	DeviceID string        `json:"device_id"`
-	Token    string        `json:"token"`
-	Location struct {
-		Type        string    `json:"type"`
-		Coordinates []float64 `json:"coordinates"`
-	} `json:"location"`
+	GetAllDevice(ctx context.Context) ([]datamodel.Device, error)
 }
 
 // Camar is the main struct of the service.
 // Camar implements DisasterReporter interface.
-// It contains alerting and recording interface implementation.
+// It contains alerting and recorder interface implementation.
 type Camar struct {
-	listener      *twitter.Client
-	grabber       ResourceGrabber
-	recording     Recorder
-	alerting      Alerting
-	writer        AlertWritter
-	usgsTwitterID int64
+	grabber  grabber.ResourceGrabber
+	recorder recorder.Recorder
+	notifer  notifier.Notifier
 }
 
-// NewDisasterReporter is a function that creates an instance of DisasterReporter.
-func NewDisasterReporter(client *twitter.Client, recorder Recorder, grabber ResourceGrabber, twitterID int64, writer AlertWritter, alerter Alerting) DisasterReporter {
+//NewDisasterReporter is a function that creates an instance of DisasterReporter.
+func NewDisasterReporter(grabber grabber.ResourceGrabber, recorder recorder.Recorder, notifier notifier.Notifier) DisasterReporter {
 	return &Camar{
-		listener:      client,
-		recording:     recorder,
+		recorder:     recorder,
 		grabber:       grabber,
-		usgsTwitterID: twitterID,
-		writer:writer,
-		alerting:alerter,
+		notifer: notifier,
 	}
 }
 
 // ListenTheEarth is a function that Listen to any Earthquake happen.
 // It is the main function of DisasterReporter Interface
-func (c *Camar) ListenTheEarth() {
-	fmt.Println("Starting Stream...")
+func (c *Camar) ListenTheEarth() error {
+	latest, err := c.grabber.GetEarthquakes()
+	if err != nil {
+		return err
+	}
+	quakes, err := c.recorder.GetEarthquakeList(1, 1)
 
-	// Convenience Demux demultiplexed stream messages
-	demux := twitter.NewSwitchDemux()
-	demux.Tweet = func(tweet *twitter.Tweet) {
-		fmt.Println("Masuk")
-		if tweet.User.ID == c.usgsTwitterID {
-			// Get Shortened link of the event
-			text := tweet.Text
-			splitted := strings.Split(text, " ")
-			textLength := len(splitted)
-
-			// Get
-			id, err := c.getEarthquakeEventID(splitted[textLength-1])
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			data, err := c.grabber.GetEarthquakeData(id)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			country, err := c.grabber.GetEarthquakeCountry(data)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			if country.CountryName == "Indonesia" {
-				data, err = c.RecordDisaster(context.Background(), data)
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				fmt.Println(data.Properties.Title)
-
-				if err := c.AlertDisastrousEvent(context.Background(), data); err != nil {
-					fmt.Println(err)
-				}
-			} else {
-				data, err = c.RecordInternationalDisaster(context.Background(), data)
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
+	if !c.verifyQuake(latest[0], quakes[0]) {
+		if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
+			return err
+		}
+		if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
+			return err
 		}
 	}
-	usgsStringId := strconv.FormatInt(c.usgsTwitterID, 10)
-	fmt.Println(usgsStringId)
-	// FILTER
-	params := &twitter.StreamFilterParams{
-		Follow:        []string{usgsStringId},
-		StallWarnings: twitter.Bool(true),
-	}
-	stream, err := c.listener.Streams.Filter(params)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	// Receive messages until stopped or stream quits
-	go demux.HandleChan(stream.Messages)
-
-	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	log.Println(<-ch)
-
-	fmt.Println("Stopping Stream...")
-	stream.Stop()
+	return nil
 }
 
-// getEarthquakeEventID is a function that will get the Earthquake event id from link that is shared.
-func (c *Camar) getEarthquakeEventID(link string) (string, error) {
-	resp, err := http.Get(link)
-	if err != nil {
-		return "", errors.Wrap(err, "get earthquake ID error")
+func (c *Camar) verifyQuake(first, second datamodel.CamarQuakeData) bool {
+	if first.Mag != second.Mag {
+		return false
+	}
+	if first.Time == second.Time {
+		return false
+	}
+	if first.Location.Coordinates[0] == first.Location.Coordinates[0] {
+		return false
 	}
 
-	// Your magic function. The Request in the Response is the last URL the
-	// client tried to access.
-	finalURL := resp.Request.URL.String()
-	split := strings.Split(finalURL, "/")
-
-	return split[len(split)-1], nil
+	return first.Location.Coordinates[1] == first.Location.Coordinates[1]
 }
 
-func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.EarthquakeDataSnapshoot, error) {
-	var list []datamodel.GeoJSON
-	var snapList []datamodel.EarthquakeDataSnapshoot
+func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, error) {
+	var snapList []datamodel.CamarQuakeData
 
-	list, err := c.recording.GetEarthquakeList(limit, page)
+	snapList, err := c.recorder.GetEarthquakeList(limit, page)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, data := range list {
-		snap := datamodel.EarthquakeDataSnapshoot{
-			Title: data.Properties.Title,
-			Location: data.Geometry,
-			Mag: data.Properties.Mag,
-			Depth: data.Geometry.Coordinates[2],
-			Place: data.Properties.Place,
-			Time: data.Properties.Time,
-			URL: data.URL,
-			Tsunami:data.Properties.Tsunami,
-		}
-		snapList =  append(snapList, snap)
 	}
 
 	return snapList, nil
 }
 
 // RecordDisaster is a function to save Disaster into our database.
-func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error) {
-	disaster.BsonID = bson.NewObjectId()
-
-	if err := c.recording.SaveDisaster(disaster); err != nil {
-		return datamodel.GeoJSON{}, err
-	}
-
-	return disaster, nil
+func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error {
+	return c.recorder.SaveDisaster(disaster)
 }
-
-func (c *Camar) RecordInternationalDisaster(ctx context.Context, disaster datamodel.GeoJSON) (datamodel.GeoJSON, error) {
-	disaster.BsonID = bson.NewObjectId()
-
-	if err := c.recording.SaveInternationalDisaster(disaster); err != nil {
-		return datamodel.GeoJSON{}, err
-	}
-
-	return disaster, nil
+// GetEarthquake return CamarQuakeData with specified ID.
+func (c *Camar) GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQuakeData, error) {
+	return c.recorder.GetEarthquake(ID)
 }
-
 // AlertDisastrousEvent is a function to alert service's device.
-func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.GeoJSON) error {
+func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.CamarQuakeData) error {
 	var errs []error
-	var wg sync.WaitGroup
 	errc := make(chan []error)
 
-	alertMessage, err := c.writer.CreateAlertMessage(disaster, []string{})
-	if err != nil {
-		return errors.Wrap(err, "AlertDisastrousEvent error on creating alert message")
-	}
-
-	devices, err := c.recording.GetDeviceInRadius([]float64{disaster.Geometry.Coordinates[0], disaster.Geometry.Coordinates[1]}, 1.36)
+	devices, err := c.recorder.GetDeviceInRadius([]float64{disaster.Location.Coordinates[0], disaster.Location.Coordinates[1]}, 1.36)
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on getting device in radius")
 	}
 
 	length := len(devices)
-	wg.Add(length)
 
 	for _, device := range devices {
-		alertMessage.Token = device.Token
-		go c.alerting.SendAlert(alertMessage, errc, &wg)
+		go c.notifer.SendAlert(disaster, device.Token, errc)
 	}
 
 	for i := 0; i < length; i++ {
@@ -294,8 +133,6 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 		}
 	}
 
-	wg.Wait()
-
 	if len(errs) > 0 {
 		return errs[0]
 	}
@@ -304,12 +141,12 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Geo
 }
 
 // NewDevice is a function to save new device device for alerting purpose.
-func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
-	dev, err := c.recording.GetDevice(device.DeviceID)
+func (c *Camar) NewDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error) {
+	dev, err := c.recorder.GetDevice(device.DeviceID)
 	if err != nil {
 		device.ID = bson.NewObjectId()
-		if err := c.recording.NewDevice(device); err != nil {
-			return Device{}, err
+		if err := c.recorder.NewDevice(device); err != nil {
+			return datamodel.Device{}, err
 		}
 
 		return device, nil
@@ -319,18 +156,18 @@ func (c *Camar) NewDevice(ctx context.Context, device Device) (Device, error) {
 }
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
-func (c *Camar) GetDevice(ctx context.Context, deviceid string) (Device, error) {
-	device, err := c.recording.GetDevice(deviceid)
+func (c *Camar) GetDevice(ctx context.Context, deviceid string) (datamodel.Device, error) {
+	device, err := c.recorder.GetDevice(deviceid)
 	if err != nil {
-		return Device{}, err
+		return datamodel.Device{}, err
 	}
 
 	return device, nil
 }
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
-func (c *Camar) GetAllDevice(ctx context.Context) ([]Device, error) {
-	devices, err := c.recording.GetAllDevice()
+func (c *Camar) GetAllDevice(ctx context.Context) ([]datamodel.Device, error) {
+	devices, err := c.recorder.GetAllDevice()
 	if err != nil {
 		return nil, err
 	}
@@ -339,14 +176,14 @@ func (c *Camar) GetAllDevice(ctx context.Context) ([]Device, error) {
 }
 
 // UpdateDevice is a function to update device latitude and logitude coordinate.
-func (c *Camar) UpdateDevice(ctx context.Context, device Device) (Device, error) {
-	dev, err := c.recording.GetDevice(device.DeviceID)
+func (c *Camar) UpdateDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error) {
+	dev, err := c.recorder.GetDevice(device.DeviceID)
 	if err != nil {
 		return dev, err
 	}
 	dev.Location = device.Location
-	if err := c.recording.UpdateDevice(dev); err != nil {
-		return Device{}, err
+	if err := c.recorder.UpdateDevice(dev); err != nil {
+		return datamodel.Device{}, err
 	}
 
 	return dev, nil

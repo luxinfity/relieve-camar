@@ -1,48 +1,34 @@
 package main
 
 import (
+	"context"
+	"encoding/xml"
 	"fmt"
-	"github.com/dghubble/go-twitter/twitter"
-	"os"
-	"os/signal"
-	"syscall"
-	"log"
-	"github.com/joho/godotenv"
-	"github.com/pamungkaski/camar/listener"
+	"github.com/pamungkaski/camar/client"
+	"github.com/pamungkaski/camar/datamodel"
+	"github.com/prometheus/common/log"
+	"net/http"
 )
 
 func main() {
-	godotenv.Load()
-	apiKey := os.Getenv("API_KEY")
-	apiKeySecret := os.Getenv("API_KEY_SECRET")
-	accessToken := os.Getenv("ACCESS_TOKEN")
-	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
-	usgsUserIdString := os.Getenv("USGS_USER_ID")
-
-	twit := listener.NewListener(apiKey, apiKeySecret, accessToken, accessTokenSecret)
-
-	fmt.Println("Starting Stream...")
-
-	fmt.Println(usgsUserIdString)
-	// FILTER
-	params := &twitter.StreamFilterParams{
-		Follow:        []string{usgsUserIdString},
-		StallWarnings: twitter.Bool(true),
+	req, err := http.NewRequest(http.MethodGet, "http://dataweb.bmkg.go.id/inatews/gempaterkini.xml", nil)
+	if err != nil {
+		log.Fatal(err)
 	}
-	stream, err := twit.Streams.Filter(params)
+	clie := client.NewClient()
+
+	_, body, err := clie.Do(context.Background(), req)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for message := range stream.Messages {
-		fmt.Println(message)
+	data := datamodel.BMKGQuakes{}
+
+	if err = xml.Unmarshal(body, &data); err != nil {
+		log.Fatal(err)
 	}
 
-	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	log.Println(<-ch)
-
-	fmt.Println("Stopping Stream...")
-	stream.Stop()
+	for _, q := range data.Gempa {
+		fmt.Println(q.Wilayah)
+	}
 }

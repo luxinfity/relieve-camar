@@ -3,8 +3,8 @@ package handler
 import (
 	"github.com/pamungkaski/camar"
 
-	"net/http"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 // Handler is a struct that handles http endpoint.
@@ -24,6 +24,7 @@ func NewRouter(camar camar.DisasterReporter) *gin.Engine {
 	router.PUT("/device/:id", handler.UpdateDevice)
 
 	router.GET("/earthquakeList", handler.GetEarthquakeList)
+	router.GET("/earthquake/:id", handler.GetEarthquakeList)
 
 	router.GET("/", func(context *gin.Context) {
 		context.JSON(http.StatusOK, "CAMAR RUNNING")

@@ -11,8 +11,13 @@ import (
 
 	"github.com/pamungkaski/camar/client"
 	"github.com/pamungkaski/camar/datamodel"
-	"fmt"
 )
+
+// ResourceGrabber is the bussiness logic contract for getting earthquake data.
+type ResourceGrabber interface {
+	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
+	GetEarthquakes() ([]datamodel.CamarQuakeData, error)
+}
 
 // USGS is the main struct that implement ResourceGrabber interface.
 // The main usage of this struct is to get earthquake data.
@@ -76,40 +81,4 @@ func (u *USGS) buildUSGSRequest(eventID string) (*http.Request, error) {
 	}
 
 	return req, nil
-}
-
-func(u *USGS) GetEarthquakeCountry(earthquakeData datamodel.GeoJSON) (datamodel.CountryData, error) {
-	var data datamodel.CountryData
-
-	endpoint, err := url.Parse("http://api.geonames.org/countryCode")
-	if err != nil {
-		return data, errors.Wrap(err, "failed to create USGSquery")
-	}
-	endpoint.Scheme = "http"
-	endpoint.Host = "api.geonames.org"
-
-	query := endpoint.Query()
-	query.Add("type", "JSON")
-	query.Add("lat", fmt.Sprintf("%f", earthquakeData.Geometry.Coordinates[1]))
-	query.Add("lng", fmt.Sprintf("%f", earthquakeData.Geometry.Coordinates[0]))
-	query.Add("username", "pamungkaski")
-	query.Add("radius", "150")
-
-	endpoint.RawQuery = query.Encode()
-	//fmt.Println(endpoint.String())
-	req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
-	if err != nil {
-		return data, errors.Wrap(err, "failed to create geonames query")
-	}
-
-	_, body, err := u.api.Do(context.Background(), req)
-	if err != nil {
-		return data, err
-	}
-
-	if err = json.Unmarshal(body, &data); err != nil {
-		return data, errors.Wrap(err, "failed to retrive data from geonames")
-	}
-
-	return data, nil
 }
