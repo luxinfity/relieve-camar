@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
 	"github.com/pamungkaski/camar"
 )
 
@@ -19,19 +18,17 @@ type TwitterListener interface {
 }
 
 type Listener struct {
-	camar     camar.Camar
+	camar     camar.DisasterReporter
 	client    *twitter.Client
 	twitterID int64
 }
 
-func NewListener(consumerKey, consumerSecret, accessToken, accessSecret string) *twitter.Client {
-	config := oauth1.NewConfig(consumerKey, consumerSecret)
-	token := oauth1.NewToken(accessToken, accessSecret)
-	httpClient := config.Client(oauth1.NoContext, token)
-
-	// Twitter client
-	client := twitter.NewClient(httpClient)
-	return client
+func NewListener(cam camar.DisasterReporter, client *twitter.Client, twitterID int64) TwitterListener {
+	return &Listener{
+		camar:     cam,
+		client:    client,
+		twitterID: twitterID,
+	}
 }
 
 func (l *Listener) ListenToQuake() {

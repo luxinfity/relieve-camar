@@ -49,9 +49,9 @@ type Camar struct {
 //NewDisasterReporter is a function that creates an instance of DisasterReporter.
 func NewDisasterReporter(grabber grabber.ResourceGrabber, recorder recorder.Recorder, notifier notifier.Notifier) DisasterReporter {
 	return &Camar{
-		recorder:     recorder,
-		grabber:       grabber,
-		notifer: notifier,
+		recorder: recorder,
+		grabber:  grabber,
+		notifer:  notifier,
 	}
 }
 
@@ -105,14 +105,16 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error {
 	return c.recorder.SaveDisaster(disaster)
 }
+
 // GetEarthquake return CamarQuakeData with specified ID.
 func (c *Camar) GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQuakeData, error) {
 	return c.recorder.GetEarthquake(ID)
 }
+
 // AlertDisastrousEvent is a function to alert service's device.
 func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.CamarQuakeData) error {
 	var errs []error
-	errc := make(chan []error)
+	errc := make(chan error)
 
 	devices, err := c.recorder.GetDeviceInRadius([]float64{disaster.Location.Coordinates[0], disaster.Location.Coordinates[1]}, 1.36)
 	if err != nil {
@@ -127,9 +129,8 @@ func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.Cam
 
 	for i := 0; i < length; i++ {
 		errsx := <-errc
-		lenErrsx := len(errsx)
-		if lenErrsx > 0 {
-			errs = append(errs, errsx...)
+		if errsx != nil {
+			errs = append(errs, errsx)
 		}
 	}
 

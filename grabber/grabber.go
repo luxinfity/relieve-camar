@@ -4,13 +4,14 @@ package grabber
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/pkg/errors"
-	"net/http"
-	"net/url"
-
+	"encoding/xml"
+	"fmt"
 	"github.com/pamungkaski/camar/client"
 	"github.com/pamungkaski/camar/datamodel"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // ResourceGrabber is the bussiness logic contract for getting earthquake data.
@@ -21,64 +22,61 @@ type ResourceGrabber interface {
 
 // USGS is the main struct that implement ResourceGrabber interface.
 // The main usage of this struct is to get earthquake data.
-type USGS struct {
+type BMKG struct {
 	endpoint string
 	api      client.Client
 }
 
 // NewGrabber is the function used to initiate USGS client.
 // It save the USGS endpoint to get earthquake data.
-func NewGrabber(endpoint string, api client.Client) *USGS {
-	return &USGS{
+func NewGrabber(endpoint string, api client.Client) ResourceGrabber {
+	return &BMKG{
 		endpoint: endpoint,
 		api:      api,
 	}
 }
 
-// GetEarthquakeData is the main function fo USGS to get and wrap USGS data into camar data.
-func (u *USGS) GetEarthquakeData(eventID string) (datamodel.GeoJSON, error) {
-	var data datamodel.GeoJSON
-	req, err := u.buildUSGSRequest(eventID)
-	if err != nil {
-		return data, err
-	}
-
-	//fmt.Println(req.URL.String())
-
-	_, body, err := u.api.Do(context.Background(), req)
-	if err != nil {
-		return data, err
-	}
-
-	if err = json.Unmarshal(body, &data); err != nil {
-		return data, errors.Wrap(err, "failed to retrive data from usgs")
-	}
-
-	//fmt.Println(body)
-	data.URL = req.URL.String()
-
-	return data, nil
-}
-
-// buildUSGSQuery is the function to build USGS endpoint with the detailed query needed.
-func (u *USGS) buildUSGSRequest(eventID string) (*http.Request, error) {
-	endpoint, err := url.Parse(u.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create USGSquery")
-	}
-	endpoint.Scheme = "https"
-	endpoint.Host = "earthquake.usgs.gov"
-
-	query := endpoint.Query()
-	query.Add("format", "geojson")
-	query.Add("eventid", eventID)
-
-	endpoint.RawQuery = query.Encode()
-
-	req, err := http.NewRequest(http.MethodGet, endpoint.String(), nil)
+func (b *BMKG) GetEarthquakes() ([]datamodel.CamarQuakeData, error) {
+	var data datamodel.BMKGQuakes
+	req, err := http.NewRequest(http.MethodGet, b.endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return req, nil
+	_, body, err := b.api.Do(context.Background(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := xml.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+
+	return b.typecastBMKGQuakeToCamar(data), nil
+}
+
+func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel.CamarQuakeData {
+	var data []datamodel.CamarQuakeData
+	for _, gempa := range quakes.Gempa {
+		var quake datamodel.CamarQuakeData
+		mag, _ := strconv.ParseFloat(gempa.Magnitude, 64)
+		dep, _ := strconv.ParseFloat(strings.Split(gempa.Kedalaman, " ")[0], 64)
+		coors := strings.Split(gempa.Point.Coordinates, " ")
+		latitude, _ := strconv.ParseFloat(strings.Split(coors[0], ",")[0], 64)
+		Longitude, _ := strconv.ParseFloat(coors[1], 64)
+		wkt, _ := time.Parse("2/1/2006-15:04:05", strings.Split(gempa.Tanggal, " ")[0])
+
+		quake.Title = fmt.Sprintf("Gempa Mag:%.1f, %s, %s pada kedalaman %s dapat dirasakan di %s", mag, wkt.Format("2/1/2006-15:04:05"), gempa.Keterangan, gempa.Kedalaman, gempa.Dirasakan)
+		quake.Time = wkt.Unix()
+		quake.Location.Type = "Point"
+		quake.Location.Coordinates = append(quake.Location.Coordinates, Longitude)
+		quake.Location.Coordinates = append(quake.Location.Coordinates, latitude)
+		quake.Mag = mag
+		quake.Depth = dep
+		quake.Place = gempa.Dirasakan
+
+		data = append(data, quake)
+	}
+
+	return data
 }

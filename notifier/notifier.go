@@ -19,7 +19,7 @@ type FCM struct {
 // the main idea is to send alert to all device.
 type Notifier interface {
 	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(disaster datamodel.CamarQuakeData, token string, errc chan []error)
+	SendAlert(disaster datamodel.CamarQuakeData, token string, errc chan error)
 }
 
 func NewAlerter() *FCM {
