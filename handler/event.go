@@ -43,7 +43,7 @@ func (h *Handler) GetEvent(ctx *gin.Context) {
 	eventID := ctx.Param("id")
 	var response datamodel.Response
 
-	event, err := h.camar.GetDevice(context.Background(), eventID)
+	event, err := h.camar.GetEvent(context.Background(), eventID)
 	if err != nil {
 		if event.ID == "" {
 			response.Data = err
@@ -76,7 +76,6 @@ func (h *Handler) UpdateEvent(ctx *gin.Context) {
 		return
 	}
 
-
 	event, err := h.camar.UpdateEvent(context.Background(), event)
 	if err != nil {
 		fmt.Println(err)
@@ -92,19 +91,12 @@ func (h *Handler) UpdateEvent(ctx *gin.Context) {
 }
 
 func (h *Handler) DeleteEvent(ctx *gin.Context) {
-	fmt.Println("Endpoint Hit: Update Device")
-	var event datamodel.Event
+	fmt.Println("Endpoint Hit: Delete Device")
 	var response datamodel.Response
-
 	ctx.Header("Content-Type", "application/json")
-	if err := ctx.BindJSON(&event); err != nil {
-		response.Data = err
-		response.Status = http.StatusBadRequest
-		ctx.JSON(http.StatusBadRequest, response)
-		return
-	}
+	eventID := ctx.Param("id")
 
-	err := h.camar.DeleteEvent(context.Background(), event)
+	err := h.camar.DeleteEvent(context.Background(), eventID)
 	if err != nil {
 		fmt.Println(err)
 		response.Data = err

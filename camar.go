@@ -44,7 +44,7 @@ type DisasterReporter interface {
 	// UpdateEvent is a function to update event latitude and longitude coordinate.
 	UpdateEvent(ctx context.Context, event datamodel.Event) (datamodel.Event, error)
 	//
-	DeleteEvent(ctx context.Context, event datamodel.Event) (error)
+	DeleteEvent(ctx context.Context, eventID string) (error)
 	//
 	GetAllEvent(ctx context.Context) ([]datamodel.Event, error)
 }
@@ -261,13 +261,13 @@ func (c *Camar) UpdateEvent(ctx context.Context, event datamodel.Event) (datamod
 	return event, nil
 }
 //
-func (c *Camar) DeleteEvent(ctx context.Context, event datamodel.Event) (error) {
-	_, err := c.recorder.GetEvent(event.ID.String())
+func (c *Camar) DeleteEvent(ctx context.Context, eventID string) (error) {
+	eve, err := c.recorder.GetEvent(eventID)
 	if err != nil {
 		return err
 	}
 
-	if err := c.recorder.DeleteEvent(event); err != nil {
+	if err := c.recorder.DeleteEvent(eve); err != nil {
 		return  err
 	}
 

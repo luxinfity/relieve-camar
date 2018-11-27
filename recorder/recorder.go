@@ -209,8 +209,8 @@ func (m *MongoDB) GetEvent(eventID string) (datamodel.Event, error) {
 }
 // UpdateEvent is a function to update event latitude and longitude coordinate.
 func (m *MongoDB) UpdateEvent(event datamodel.Event) (error) {
-	dbAct := m.session.DB("camar").C("user")
-	err := dbAct.UpdateId(event.ID, &event)
+	dbAct := m.session.DB("camar").C("event")
+	err := dbAct.UpdateId(event.ID, event)
 	if err != nil {
 		return errors.Wrap(err, "UpdateEvent error")
 	}
@@ -218,7 +218,7 @@ func (m *MongoDB) UpdateEvent(event datamodel.Event) (error) {
 }
 //
 func (m *MongoDB) DeleteEvent(event datamodel.Event) (error) {
-	dbAct := m.session.DB("camar").C("user")
+	dbAct := m.session.DB("camar").C("event")
 	err := dbAct.RemoveId(event.ID)
 	if err != nil {
 		return errors.Wrap(err, "DeleteEvent error")
