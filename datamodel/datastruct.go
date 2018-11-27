@@ -24,6 +24,17 @@ type Device struct {
 	} `json:"location"`
 }
 
+type Event struct {
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	Location struct {
+		Type        string    `json:"type"`
+		Coordinates []float64 `json:"coordinates"`
+	} `json:"location"`
+	Time  int64   `json:"time"`
+	EventType string `json:"event_type"`
+	EventDetail interface{} `json:"event_detail"`
+}
+
 type CamarQuakeData struct {
 	ID       bson.ObjectId `bson:"_id" json:"id"`
 	Title    string        `json:"title"`

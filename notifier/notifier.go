@@ -7,7 +7,6 @@ import (
 
 	"firebase.google.com/go"
 	"firebase.google.com/go/messaging"
-	"github.com/pamungkaski/camar/datamodel"
 	"google.golang.org/api/option"
 )
 
@@ -19,7 +18,7 @@ type FCM struct {
 // the main idea is to send alert to all device.
 type Notifier interface {
 	// SendAlert is a function to send Disastrous Event alert to specific Device using the alerting service.
-	SendAlert(disaster datamodel.CamarQuakeData, token string, errc chan error)
+	SendAlert(disaster interface{}, token string, errc chan error)
 }
 
 func NewAlerter() *FCM {
@@ -33,7 +32,7 @@ func NewAlerter() *FCM {
 	}
 }
 
-func (f *FCM) SendAlert(disaster datamodel.CamarQuakeData, token string, errc chan error) {
+func (f *FCM) SendAlert(disaster interface{}, token string, errc chan error) {
 	alert := f.createAlertMessage(disaster, token)
 
 	// Obtain a messaging.Client from the App.
@@ -53,14 +52,14 @@ func (f *FCM) SendAlert(disaster datamodel.CamarQuakeData, token string, errc ch
 	errc <- nil
 }
 
-func (f *FCM) createAlertMessage(disaster datamodel.CamarQuakeData, token string) messaging.Message {
+func (f *FCM) createAlertMessage(disaster interface{}, token string) messaging.Message {
 	message := messaging.Message{
 		Data: map[string]string{
-			"URL": fmt.Sprintf("/earthquake/%v", disaster.ID.String()),
+			"data": fmt.Sprintf("%b", disaster),
 		},
 		Notification: &messaging.Notification{
 			Title: "Warning",
-			Body:  disaster.Title,
+			Body:  "Disaster just happen in your area",
 		},
 		Token: token,
 	}

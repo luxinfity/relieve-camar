@@ -26,6 +26,12 @@ func NewRouter(camar camar.DisasterReporter) *gin.Engine {
 	router.GET("/earthquakeList", handler.GetEarthquakeList)
 	router.GET("/earthquake/:id", handler.GetEarthquake)
 
+	router.GET("/events", handler.GetAllEvent)
+	router.POST("/events", handler.NewEvent)
+	router.GET("/events/:id", handler.GetEvent)
+	router.PUT("/events/:id", handler.UpdateEvent)
+	router.DELETE("/events/:id", handler.DeleteEvent)
+
 	router.GET("/", func(context *gin.Context) {
 		context.JSON(http.StatusOK, "CAMAR RUNNING")
 	})

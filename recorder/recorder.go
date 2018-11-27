@@ -29,6 +29,16 @@ type Recorder interface {
 	GetDeviceInRadius(disasterCoordinate []float64, radius float64) ([]datamodel.Device, error)
 	//
 	GetAllDevice() ([]datamodel.Device, error)
+	//
+	NewEvent(event datamodel.Event) (error)
+	// GetEvent
+	GetEvent(eventID string) (datamodel.Event, error)
+	// UpdateEvent is a function to update event latitude and longitude coordinate.
+	UpdateEvent(event datamodel.Event) (error)
+	//
+	DeleteEvent(event datamodel.Event) (error)
+	//
+	GetAllEvent() ([]datamodel.Event, error)
 }
 
 type MongoDB struct {
@@ -136,7 +146,7 @@ func (m *MongoDB) GetAllDevice() ([]datamodel.Device, error) {
 	dbAct := m.session.DB("camar").C("user")
 	err := dbAct.Find(nil).All(&dev)
 	if err != nil {
-		return dev, errors.Wrap(err, "GetDevice error")
+		return dev, errors.Wrap(err, "GetAllDevice error")
 	}
 	return dev, nil
 }
@@ -172,4 +182,56 @@ func (m *MongoDB) GetDeviceInRadius(disasterCoordinate []float64, radius float64
 	}
 
 	return results, nil
+}
+
+
+func (m *MongoDB) NewEvent(event datamodel.Event) (error) {
+	dbAct := m.session.DB("camar").C("event")
+	err := dbAct.Insert(&event)
+	if err != nil {
+		return errors.Wrap(err, "NewEvent error")
+	}
+	return nil
+}
+
+// GetEvent
+func (m *MongoDB) GetEvent(eventID string) (datamodel.Event, error) {
+	var eve datamodel.Event
+	query := bson.M{
+		"_id": bson.ObjectIdHex(eventID),
+	}
+	dbAct := m.session.DB("camar").C("event")
+	err := dbAct.Find(query).One(&eve)
+	if err != nil {
+		return eve, errors.Wrap(err, "GetEvent error")
+	}
+	return eve, nil
+}
+// UpdateEvent is a function to update event latitude and longitude coordinate.
+func (m *MongoDB) UpdateEvent(event datamodel.Event) (error) {
+	dbAct := m.session.DB("camar").C("user")
+	err := dbAct.UpdateId(event.ID, &event)
+	if err != nil {
+		return errors.Wrap(err, "UpdateEvent error")
+	}
+	return nil
+}
+//
+func (m *MongoDB) DeleteEvent(event datamodel.Event) (error) {
+	dbAct := m.session.DB("camar").C("user")
+	err := dbAct.RemoveId(event.ID)
+	if err != nil {
+		return errors.Wrap(err, "DeleteEvent error")
+	}
+	return nil
+}
+//
+func (m *MongoDB) GetAllEvent() ([]datamodel.Event, error) {
+	var eve []datamodel.Event
+	dbAct := m.session.DB("camar").C("event")
+	err := dbAct.Find(nil).All(&eve)
+	if err != nil {
+		return eve, errors.Wrap(err, "GetAllEvent error")
+	}
+	return eve, nil
 }

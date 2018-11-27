@@ -27,7 +27,8 @@ type DisasterReporter interface {
 	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, error)
 	// AlertDisastrousEvent is a function to alert service's device.
 	GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQuakeData, error)
-	AlertDisastrousEvent(ctx context.Context, disaster datamodel.CamarQuakeData) error
+	//
+	AlertDisastrousEvent(ctx context.Context,  disaster interface{}, coor []float64) error
 	// NewDevice is a function to save new device device for alerting purpose.
 	NewDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error)
 	// GetDevice
@@ -36,6 +37,16 @@ type DisasterReporter interface {
 	UpdateDevice(ctx context.Context, device datamodel.Device) (datamodel.Device, error)
 	//
 	GetAllDevice(ctx context.Context) ([]datamodel.Device, error)
+	// NewEvent is a function to save new event  for alerting purpose.
+	NewEvent(ctx context.Context, event datamodel.Event) (datamodel.Event, error)
+	// GetEvent
+	GetEvent(ctx context.Context, eventID string) (datamodel.Event, error)
+	// UpdateEvent is a function to update event latitude and longitude coordinate.
+	UpdateEvent(ctx context.Context, event datamodel.Event) (datamodel.Event, error)
+	//
+	DeleteEvent(ctx context.Context, event datamodel.Event) (error)
+	//
+	GetAllEvent(ctx context.Context) ([]datamodel.Event, error)
 }
 
 // Camar is the main struct of the service.
@@ -75,7 +86,7 @@ func (c *Camar) ListenTheEarth() error {
 				if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
 					return err
 				}
-				if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
+				if err := c.AlertDisastrousEvent(context.Background(), latest[0], latest[0].Location.Coordinates); err != nil {
 					return err
 				}
 			}
@@ -84,7 +95,7 @@ func (c *Camar) ListenTheEarth() error {
 			if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
 				return err
 			}
-			if err := c.AlertDisastrousEvent(context.Background(), latest[0]); err != nil {
+			if err := c.AlertDisastrousEvent(context.Background(), latest[0], latest[0].Location.Coordinates); err != nil {
 				return err
 			}
 		}
@@ -119,6 +130,16 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 
 // RecordDisaster is a function to save Disaster into our database.
 func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error {
+	eve := datamodel.Event{
+		Time: disaster.Time,
+		EventType: "Earthquake",
+		Location: disaster.Location,
+		EventDetail: disaster,
+	}
+	eve.ID = bson.NewObjectId()
+	if err := c.recorder.NewEvent(eve); err != nil {
+		return err
+	}
 	return c.recorder.SaveDisaster(disaster)
 }
 
@@ -128,11 +149,11 @@ func (c *Camar) GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQu
 }
 
 // AlertDisastrousEvent is a function to alert service's device.
-func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster datamodel.CamarQuakeData) error {
+func (c *Camar) AlertDisastrousEvent(ctx context.Context, disaster interface{}, coor []float64) error {
 	var errs []error
 	errc := make(chan error)
 
-	devices, err := c.recorder.GetDeviceInRadius([]float64{disaster.Location.Coordinates[0], disaster.Location.Coordinates[1]}, 1.36)
+	devices, err := c.recorder.GetDeviceInRadius([]float64{coor[0], coor[1]}, 1.36)
 	if err != nil {
 		return errors.Wrap(err, "AlertDisastrousEvent error on getting device in radius")
 	}
@@ -204,4 +225,55 @@ func (c *Camar) UpdateDevice(ctx context.Context, device datamodel.Device) (data
 	}
 
 	return dev, nil
+}
+
+
+func (c *Camar) NewEvent(ctx context.Context, event datamodel.Event) (datamodel.Event, error) {
+	event.ID = bson.NewObjectId()
+	if err := c.recorder.NewEvent(event); err != nil {
+		return datamodel.Event{}, err
+	}
+
+	go c.AlertDisastrousEvent(context.Background(), event, event.Location.Coordinates)
+
+	return event, nil
+}
+// GetEvent
+func (c *Camar) GetEvent(ctx context.Context, eventID string) (datamodel.Event, error) {
+	event, err := c.recorder.GetEvent(eventID)
+	if err != nil {
+		return datamodel.Event{}, err
+	}
+
+	return event, nil
+}
+// UpdateEvent is a function to update event latitude and longitude coordinate.
+func (c *Camar) UpdateEvent(ctx context.Context, event datamodel.Event) (datamodel.Event, error) {
+	eve, err := c.recorder.GetEvent(event.ID.String())
+	if err != nil {
+		return eve, err
+	}
+
+	if err := c.recorder.UpdateEvent(event); err != nil {
+		return datamodel.Event{}, err
+	}
+
+	return event, nil
+}
+//
+func (c *Camar) DeleteEvent(ctx context.Context, event datamodel.Event) (error) {
+	_, err := c.recorder.GetEvent(event.ID.String())
+	if err != nil {
+		return err
+	}
+
+	if err := c.recorder.DeleteEvent(event); err != nil {
+		return  err
+	}
+
+	return nil
+}
+//
+func (c *Camar) GetAllEvent(ctx context.Context) ([]datamodel.Event, error) {
+	return c.recorder.GetAllEvent()
 }
