@@ -97,7 +97,6 @@ func (m *MongoDB) GetEarthquake(ID string) (datamodel.CamarQuakeData, error) {
 
 // SaveDisaster is a function to save disaster data into database
 func (m *MongoDB) SaveDisaster(disaster datamodel.CamarQuakeData) error {
-	disaster.ID = bson.NewObjectId()
 	dbAct := m.session.DB("camar").C("earthquake")
 	err := dbAct.Insert(disaster)
 	if err != nil {

@@ -130,6 +130,7 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 
 // RecordDisaster is a function to save Disaster into our database.
 func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error {
+	disaster.ID = bson.NewObjectId()
 	eve := datamodel.Event{
 		Time: disaster.Time,
 		EventType: "Earthquake",

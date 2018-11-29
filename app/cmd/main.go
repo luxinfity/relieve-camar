@@ -1,34 +1,55 @@
 package main
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
-	"github.com/pamungkaski/camar/client"
-	"github.com/pamungkaski/camar/datamodel"
 	"github.com/prometheus/common/log"
-	"net/http"
+	"github.com/dghubble/go-twitter/twitter"
+	"os"
+	"os/signal"
+	"syscall"
+	"github.com/joho/godotenv"
+	"github.com/dghubble/oauth1"
 )
 
 func main() {
-	req, err := http.NewRequest(http.MethodGet, "http://dataweb.bmkg.go.id/inatews/gempadirasakan.xml", nil)
+	godotenv.Load()
+	apiKey := os.Getenv("API_KEY")
+	apiKeySecret := os.Getenv("API_KEY_SECRET")
+	accessToken := os.Getenv("ACCESS_TOKEN")
+	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
+	fmt.Println("Starting Stream...")
+	config := oauth1.NewConfig(apiKey, apiKeySecret)
+	token := oauth1.NewToken(accessToken, accessTokenSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
+
+	// Twitter client
+	twitClient := twitter.NewClient(httpClient)
+
+	// Convenience Demux demultiplexed stream messages
+	demux := twitter.NewSwitchDemux()
+	demux.Tweet = func(tweet *twitter.Tweet) {
+		fmt.Println(tweet)
+	}
+
+	// FILTER
+	params := &twitter.StreamFilterParams{
+		Follow: []string{"382449035"},
+		StallWarnings: twitter.Bool(true),
+	}
+
+	stream, err := twitClient.Streams.Filter(params)
 	if err != nil {
 		log.Fatal(err)
 	}
-	clie := client.NewClient()
 
-	_, body, err := clie.Do(context.Background(), req)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Receive messages until stopped or stream quits
+	go demux.HandleChan(stream.Messages)
 
-	data := datamodel.BMKGQuakes{}
+	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	log.Fatal(<-ch)
 
-	if err = xml.Unmarshal(body, &data); err != nil {
-		log.Fatal(err)
-	}
-
-	for _, q := range data.Gempa {
-		fmt.Println(q.Dirasakan)
-	}
+	fmt.Println("Stopping Stream...")
+	stream.Stop()
 }
