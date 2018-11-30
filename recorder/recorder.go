@@ -7,6 +7,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/pamungkaski/camar/datamodel"
 	"github.com/pkg/errors"
+	"sort"
 )
 
 // Recorder is the business logic contract for saving data.
@@ -73,12 +74,17 @@ func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData
 	var results []datamodel.CamarQuakeData
 
 	dbAct := m.session.DB("camar").C("earthquake")
-	err := dbAct.Find(nil).Sort("properties.time").Skip(limit * (page - 1)).Limit(limit).All(&results)
+	err := dbAct.Find(nil).All(&results)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "Get List of Recent Earthquake")
 	}
-	return results, nil
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Time > results[j].Time
+	})
+
+	return results[limit*(page - 1): limit], nil
 }
 
 func (m *MongoDB) GetEarthquake(ID string) (datamodel.CamarQuakeData, error) {
