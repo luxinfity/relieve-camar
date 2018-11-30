@@ -13,6 +13,7 @@ import (
 	"github.com/pamungkaski/camar/recorder"
 	"github.com/pkg/errors"
 	"fmt"
+	"sort"
 )
 
 // DisasterReporter is the business logic contract for camar service.
@@ -124,6 +125,9 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(snapList, func(i, j int) bool {
+		return snapList[i].Time > snapList[j].Time
+	})
 
 	return snapList, nil
 }
