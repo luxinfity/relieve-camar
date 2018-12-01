@@ -74,7 +74,7 @@ func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData
 	var results []datamodel.CamarQuakeData
 
 	dbAct := m.session.DB("camar").C("earthquake")
-	err := dbAct.Find(nil).All(&results)
+	err := dbAct.Find(nil).Skip(limit * (page - 1)).Limit(limit).All(&results)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.Wrap(err, "Get List of Recent Earthquake")
