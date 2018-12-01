@@ -7,6 +7,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/pamungkaski/camar/datamodel"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 // Recorder is the business logic contract for saving data.
@@ -16,7 +17,7 @@ type Recorder interface {
 	// SaveDisaster is a function to save disaster data into database
 	SaveInternationalDisaster(disaster datamodel.CamarQuakeData) error
 	//
-	GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData, error)
+	GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData, int, error)
 	//
 	GetEarthquake(ID string) (datamodel.CamarQuakeData, error)
 	// SaveDevice is a function to register device on the alerting service.
@@ -38,7 +39,7 @@ type Recorder interface {
 	//
 	DeleteEvent(event datamodel.Event) (error)
 	//
-	GetAllEvent() ([]datamodel.Event, error)
+	GetAllEvent(limit, page int, eventType string) ([]datamodel.Event, int,error)
 }
 
 type MongoDB struct {
@@ -69,21 +70,23 @@ func NewMongoDB(username, password, host string) (*MongoDB, error) {
 	}, nil
 }
 
-func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData, error) {
+func (m *MongoDB) GetEarthquakeList(limit, page int) ([]datamodel.CamarQuakeData, int, error) {
 	var results []datamodel.CamarQuakeData
 
 	dbAct := m.session.DB("camar").C("earthquake")
 	err := dbAct.Find(nil).Sort("-time").Skip(limit * (page - 1)).Limit(limit).All(&results)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.Wrap(err, "Get List of Recent Earthquake")
+		return nil, 0, errors.Wrap(err, "Get List of Recent Earthquake")
 	}
 
-	//sort.Slice(results, func(i, j int) bool {
-	//	return results[i].Time > results[j].Time
-	//})
+	c, err := dbAct.Find(nil).Count()
+	if err != nil {
+		log.Println(err)
+		return nil, 0, errors.Wrap(err, "Get List of Recent Earthquake")
+	}
 
-	return results, nil
+	return results, c, nil
 }
 
 func (m *MongoDB) GetEarthquake(ID string) (datamodel.CamarQuakeData, error) {
@@ -230,12 +233,27 @@ func (m *MongoDB) DeleteEvent(event datamodel.Event) (error) {
 	return nil
 }
 //
-func (m *MongoDB) GetAllEvent() ([]datamodel.Event, error) {
-	var eve []datamodel.Event
-	dbAct := m.session.DB("camar").C("event")
-	err := dbAct.Find(nil).All(&eve)
-	if err != nil {
-		return eve, errors.Wrap(err, "GetAllEvent error")
+func (m *MongoDB) GetAllEvent(limit, page int, eventType string) ([]datamodel.Event, int, error) {
+	var results []datamodel.Event
+	var query bson.M
+
+	if eventType != "" {
+		query = bson.M{
+			"eventtype": strings.Title(eventType),
+		}
 	}
-	return eve, nil
+	dbAct := m.session.DB("camar").C("event")
+	err := dbAct.Find(query).Sort("-time").Skip(limit * (page - 1)).Limit(limit).All(&results)
+	if err != nil {
+		log.Println(err)
+		return nil, 0,errors.Wrap(err, "Get List of Recent Event")
+	}
+
+	c, err := dbAct.Find(nil).Count()
+	if err != nil {
+		log.Println(err)
+		return nil, 0,errors.Wrap(err, "Get List of Recent Event")
+	}
+
+	return results, c, nil
 }

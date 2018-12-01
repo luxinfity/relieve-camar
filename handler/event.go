@@ -6,6 +6,8 @@ import (
 	"github.com/pamungkaski/camar/datamodel"
 	"net/http"
 	"context"
+	"strconv"
+	"time"
 )
 
 func (h *Handler) NewEvent(ctx *gin.Context) {
@@ -110,20 +112,57 @@ func (h *Handler) DeleteEvent(ctx *gin.Context) {
 }
 
 func (h *Handler) GetAllEvent(ctx *gin.Context) {
-	fmt.Println("Endpoint Hit: Get All Device")
+	fmt.Println("Endpoint Hit: Get All Event")
 	ctx.Header("Content-Type", "application/json")
 	var response datamodel.Response
 
-	event, err := h.camar.GetAllEvent(context.Background())
+
+	limS := ctx.Query("limit")
+	pageS := ctx.Query("page")
+	eventType := ctx.Query("event_type")
+
+	limit, err := strconv.Atoi(limS)
 	if err != nil {
+		fmt.Println(err)
+		response.Data = err
+		response.Status = http.StatusBadRequest
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	page, err := strconv.Atoi(pageS)
+	if err != nil {
+		fmt.Println(err)
+		response.Data = err
+		response.Status = http.StatusBadRequest
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data, count, err := h.camar.GetAllEvent(context.Background(), limit, page, eventType)
+	if err != nil {
+		fmt.Println(err)
 		response.Data = err
 		response.Status = http.StatusServiceUnavailable
 		ctx.JSON(http.StatusServiceUnavailable, response)
 		return
 	}
 
-	response.Data = event
+	response.Data = struct {
+		Limit int `json:"limit"`
+		Page int `json:"page"`
+		EventType string `json:"event_type"`
+		MaxResults int `json:"max_results"`
+		TimeStamp int64 `json:"time_stamp"`
+		Data interface{} `json:"data"`
+	}{
+		Limit: limit,
+		Page: page,
+		EventType: eventType,
+		MaxResults: count,
+		TimeStamp:  time.Now().Unix(),
+		Data: data,
+	}
 	response.Status = http.StatusOK
-
 	ctx.JSON(http.StatusOK, response)
 }

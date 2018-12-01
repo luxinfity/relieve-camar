@@ -7,6 +7,7 @@ import (
 	"github.com/pamungkaski/camar/datamodel"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (h *Handler) GetEarthquakeList(ctx *gin.Context) {
@@ -35,7 +36,7 @@ func (h *Handler) GetEarthquakeList(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.camar.GetEarthquakeList(context.Background(), limit, page)
+	data, count, err := h.camar.GetEarthquakeList(context.Background(), limit, page)
 	if err != nil {
 		fmt.Println(err)
 		response.Data = err
@@ -44,7 +45,19 @@ func (h *Handler) GetEarthquakeList(ctx *gin.Context) {
 		return
 	}
 
-	response.Data = data
+	response.Data = struct {
+		Limit int `json:"limit"`
+		Page int `json:"page"`
+		MaxResults int `json:"max_results"`
+		TimeStamp int64 `json:"time_stamp"`
+		Data interface{} `json:"data"`
+	}{
+		Limit: limit,
+		Page: page,
+		MaxResults: count,
+		TimeStamp:  time.Now().Unix(),
+		Data: data,
+	}
 	response.Status = http.StatusOK
 	ctx.JSON(http.StatusOK, response)
 }

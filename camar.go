@@ -24,7 +24,7 @@ type DisasterReporter interface {
 	// RecordDisaster is a function to save Disaster into our database.
 	RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error
 	//
-	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, error)
+	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, int, error)
 	// AlertDisastrousEvent is a function to alert service's device.
 	GetEarthquake(ctx context.Context, ID string) (datamodel.CamarQuakeData, error)
 	//
@@ -46,7 +46,7 @@ type DisasterReporter interface {
 	//
 	DeleteEvent(ctx context.Context, eventID string) (error)
 	//
-	GetAllEvent(ctx context.Context) ([]datamodel.Event, error)
+	GetAllEvent(ctx context.Context, limit, page int, eventType string) ([]datamodel.Event, int, error)
 }
 
 // Camar is the main struct of the service.
@@ -74,7 +74,7 @@ func (c *Camar) ListenTheEarth() error {
 	if err != nil {
 		return err
 	}
-	quakes, err := c.recorder.GetEarthquakeList(1, 1)
+	quakes, _, err := c.recorder.GetEarthquakeList(1, 1)
 	if err != nil {
 		return nil
 	}
@@ -117,15 +117,15 @@ func (c *Camar) verifyQuake(first, second datamodel.CamarQuakeData) bool {
 	return first.Location.Coordinates[1] == first.Location.Coordinates[1]
 }
 
-func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, error) {
+func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, int, error) {
 	var snapList []datamodel.CamarQuakeData
 
-	snapList, err := c.recorder.GetEarthquakeList(limit, page)
+	snapList, count, err := c.recorder.GetEarthquakeList(limit, page)
 	if err != nil {
-		return nil, err
+		return nil, count, err
 	}
 
-	return snapList, nil
+	return snapList, count, nil
 }
 
 // RecordDisaster is a function to save Disaster into our database.
@@ -275,6 +275,13 @@ func (c *Camar) DeleteEvent(ctx context.Context, eventID string) (error) {
 	return nil
 }
 //
-func (c *Camar) GetAllEvent(ctx context.Context) ([]datamodel.Event, error) {
-	return c.recorder.GetAllEvent()
+func (c *Camar) GetAllEvent(ctx context.Context, limit, page int, eventType string) ([]datamodel.Event, int, error) {
+	var snapList []datamodel.Event
+
+	snapList, count, err := c.recorder.GetAllEvent(limit, page, eventType)
+	if err != nil {
+		return nil, count, err
+	}
+
+	return snapList, count, nil
 }
