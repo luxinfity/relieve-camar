@@ -249,7 +249,7 @@ func (m *MongoDB) GetAllEvent(limit, page int, eventType string) ([]datamodel.Ev
 		return nil, 0,errors.Wrap(err, "Get List of Recent Event")
 	}
 
-	c, err := dbAct.Find(nil).Count()
+	c, err := dbAct.Find(query).Count()
 	if err != nil {
 		log.Println(err)
 		return nil, 0,errors.Wrap(err, "Get List of Recent Event")
