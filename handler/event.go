@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"context"
 	"strconv"
-	"time"
 )
 
 func (h *Handler) NewEvent(ctx *gin.Context) {
@@ -114,7 +113,11 @@ func (h *Handler) DeleteEvent(ctx *gin.Context) {
 func (h *Handler) GetAllEvent(ctx *gin.Context) {
 	fmt.Println("Endpoint Hit: Get All Event")
 	ctx.Header("Content-Type", "application/json")
-	var response datamodel.Response
+	response := struct {
+		Status int `json:"status"`
+		MaxResults int `json:"max_results"`
+		Data interface{} `json:"data"`
+	}{}
 	var err error
 	limit := 20
 	page := 1
@@ -154,21 +157,15 @@ func (h *Handler) GetAllEvent(ctx *gin.Context) {
 		return
 	}
 
-	response.Data = struct {
-		Limit int `json:"limit"`
-		Page int `json:"page"`
-		EventType string `json:"event_type"`
+	response = struct {
+		Status int `json:"status"`
 		MaxResults int `json:"max_results"`
-		TimeStamp int64 `json:"time_stamp"`
 		Data interface{} `json:"data"`
 	}{
-		Limit: limit,
-		Page: page,
-		EventType: eventType,
+		Status: http.StatusOK,
 		MaxResults: count,
-		TimeStamp:  time.Now().Unix(),
 		Data: data,
 	}
-	response.Status = http.StatusOK
+
 	ctx.JSON(http.StatusOK, response)
 }
