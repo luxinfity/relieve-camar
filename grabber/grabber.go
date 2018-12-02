@@ -17,7 +17,7 @@ import (
 // ResourceGrabber is the bussiness logic contract for getting earthquake data.
 type ResourceGrabber interface {
 	// GetEarthQuakeData is a function to to retrieve Earthquake detailed data.
-	GetEarthquakes() ([]datamodel.CamarQuakeData, error)
+	GetEarthquakes() ([]datamodel.Event, error)
 }
 
 // USGS is the main struct that implement ResourceGrabber interface.
@@ -36,7 +36,7 @@ func NewGrabber(endpoint string, api client.Client) ResourceGrabber {
 	}
 }
 
-func (b *BMKG) GetEarthquakes() ([]datamodel.CamarQuakeData, error) {
+func (b *BMKG) GetEarthquakes() ([]datamodel.Event, error) {
 	var data datamodel.BMKGQuakes
 	req, err := http.NewRequest(http.MethodGet, b.endpoint, nil)
 	if err != nil {
@@ -55,30 +55,36 @@ func (b *BMKG) GetEarthquakes() ([]datamodel.CamarQuakeData, error) {
 	return b.typecastBMKGQuakeToCamar(data), nil
 }
 
-func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel.CamarQuakeData {
-	var data []datamodel.CamarQuakeData
+func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel.Event {
+	var data []datamodel.Event
 	for _, gempa := range quakes.Gempa {
 		var quake datamodel.CamarQuakeData
+		var event datamodel.Event
+
 		mag, _ := strconv.ParseFloat(gempa.Magnitude, 64)
 		dep, _ := strconv.ParseFloat(strings.Split(gempa.Kedalaman, " ")[0], 64)
 		coors := strings.Split(gempa.Point.Coordinates, " ")
 		latitude, _ := strconv.ParseFloat(strings.Split(coors[0], ",")[0], 64)
 		Longitude, _ := strconv.ParseFloat(coors[1], 64)
-		wkt, _ := time.Parse("2/1/2006-15:04:05", strings.Split(gempa.Tanggal, " ")[0])
+		wkt, _ := time.ParseInLocation("2/1/2006-15:04:05", strings.Split(gempa.Tanggal, " ")[0], time.Local)
 
 		quake.Title = fmt.Sprintf("Gempa Mag:%.1f, %s, %s pada kedalaman %s dapat dirasakan di %s", mag, wkt.Format("2/1/2006-15:04:05"), gempa.Keterangan, gempa.Kedalaman, gempa.Dirasakan)
-		quake.Time = wkt.Unix()
-		quake.Location.Type = "Point"
-		quake.Location.Coordinates = append(quake.Location.Coordinates, Longitude)
-		quake.Location.Coordinates = append(quake.Location.Coordinates, latitude)
 		quake.Mag = mag
 		quake.Depth = dep
-		quake.Place = strings.Replace(gempa.Dirasakan, "\t", " ", -1)
-
+		quake.MMI = strings.Replace(gempa.Dirasakan, "\t", " ", -1)
 		quake.Title =  strings.Replace(quake.Title, "\t", " ", -1)
 		quake.Title =  strings.Replace(quake.Title, "  ", " ", -1)
 
-		data = append(data, quake)
+		event.Location.Type = "Point"
+		event.Location.Coordinates = append(event.Location.Coordinates, Longitude)
+		event.Location.Coordinates = append(event.Location.Coordinates, latitude)
+		event.Time = wkt.Unix()
+		event.TimeArrived = time.Now().Local().Unix()
+		event.EventType = "Earthquake"
+		event.Source = "BMKG"
+		event.EventDetail = quake
+
+		data = append(data, event)
 	}
 
 	return data

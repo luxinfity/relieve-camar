@@ -31,21 +31,17 @@ type Event struct {
 		Coordinates []float64 `json:"coordinates"`
 	} `json:"location"`
 	Time  int64   `json:"time"`
+	TimeArrived int64 `json:"time_arrived"`
 	EventType string `json:"event_type"`
+	Source string `json:"source"`
 	EventDetail interface{} `json:"event_detail"`
 }
 
 type CamarQuakeData struct {
-	ID       bson.ObjectId `bson:"_id" json:"id"`
 	Title    string        `json:"title"`
-	Location struct {
-		Type        string    `json:"type"`
-		Coordinates []float64 `json:"coordinates"`
-	} `json:"location"`
 	Mag   float64 `json:"mag"`
 	Depth float64 `json:"depth"`
-	Place string  `json:"place"`
-	Time  int64   `json:"time"`
+	MMI string  `json:"mmi"`
 }
 
 type BMKGQuakes struct {

@@ -239,9 +239,10 @@ func (m *MongoDB) GetAllEvent(limit, page int, eventType string) ([]datamodel.Ev
 
 	if eventType != "" {
 		query = bson.M{
-			"eventtype": strings.Title(eventType),
+			"eventtype": strings.Title(strings.ToLower(eventType)),
 		}
 	}
+
 	dbAct := m.session.DB("camar").C("event")
 	err := dbAct.Find(query).Sort("-time").Skip(limit * (page - 1)).Limit(limit).All(&results)
 	if err != nil {

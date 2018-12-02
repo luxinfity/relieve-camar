@@ -22,7 +22,7 @@ type DisasterReporter interface {
 	// It is the main function of DisasterReporter Interface
 	ListenTheEarth() error
 	// RecordDisaster is a function to save Disaster into our database.
-	RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error
+	RecordDisaster(ctx context.Context, disaster datamodel.Event) error
 	//
 	GetEarthquakeList(ctx context.Context, limit, page int) ([]datamodel.CamarQuakeData, int, error)
 	// AlertDisastrousEvent is a function to alert service's device.
@@ -74,7 +74,7 @@ func (c *Camar) ListenTheEarth() error {
 	if err != nil {
 		return err
 	}
-	quakes, _, err := c.recorder.GetEarthquakeList(1, 1)
+	quakes, _, err := c.recorder.GetAllEvent(1, 1, "Earthquake")
 	if err != nil {
 		return nil
 	}
@@ -82,7 +82,7 @@ func (c *Camar) ListenTheEarth() error {
 	if len(latest) != 0{
 		if len(quakes) != 0 {
 			if !c.verifyQuake(latest[0], quakes[0]) {
-				fmt.Println(latest[0].Title)
+				fmt.Println(latest[0].EventDetail)
 				if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
 					return err
 				}
@@ -91,7 +91,7 @@ func (c *Camar) ListenTheEarth() error {
 				}
 			}
 		} else {
-			fmt.Println(latest[0].Title)
+			fmt.Println(latest[0].EventDetail)
 			if err := c.RecordDisaster(context.Background(), latest[0]); err != nil {
 				return err
 			}
@@ -103,10 +103,7 @@ func (c *Camar) ListenTheEarth() error {
 	return nil
 }
 
-func (c *Camar) verifyQuake(first, second datamodel.CamarQuakeData) bool {
-	if first.Mag != second.Mag {
-		return false
-	}
+func (c *Camar) verifyQuake(first, second datamodel.Event) bool {
 	if first.Time != second.Time {
 		return false
 	}
@@ -129,19 +126,9 @@ func (c *Camar) GetEarthquakeList(ctx context.Context, limit, page int) ([]datam
 }
 
 // RecordDisaster is a function to save Disaster into our database.
-func (c *Camar) RecordDisaster(ctx context.Context, disaster datamodel.CamarQuakeData) error {
-	disaster.ID = bson.NewObjectId()
-	eve := datamodel.Event{
-		Time: disaster.Time,
-		EventType: "Earthquake",
-		Location: disaster.Location,
-		EventDetail: disaster,
-	}
-	eve.ID = bson.NewObjectId()
-	if err := c.recorder.NewEvent(eve); err != nil {
-		return err
-	}
-	return c.recorder.SaveDisaster(disaster)
+func (c *Camar) RecordDisaster(ctx context.Context, event datamodel.Event) error {
+	event.ID = bson.NewObjectId()
+	return c.recorder.NewEvent(event)
 }
 
 // GetEarthquake return CamarQuakeData with specified ID.
