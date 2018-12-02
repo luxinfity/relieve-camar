@@ -2,10 +2,10 @@ package main
 
 import (
 	"os"
+	"log"
 	"github.com/joho/godotenv"
 	"github.com/globalsign/mgo/bson"
 	"github.com/globalsign/mgo"
-	"github.com/prometheus/common/log"
 	"github.com/pamungkaski/camar/datamodel"
 	"time"
 )
