@@ -67,7 +67,7 @@ func main() {
 			Title: quake.Title,
 			Mag: quake.Mag,
 			MMI: quake.Place,
-			Depth: quake.Mag,
+			Depth: quake.Depth,
 		}
 
 		dbEve.Insert(&event)
