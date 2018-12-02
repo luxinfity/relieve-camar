@@ -10,6 +10,18 @@ type Response struct {
 	Data   interface{} `json:"data"`
 }
 
+type ResponseEvent struct {
+	ID       bson.ObjectId `bson:"_id" json:"id"`
+	Location struct {
+		Latitude float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	} `json:"location"`
+	Time  int64   `json:"time"`
+	EventType string `json:"event_type"`
+	Source string `json:"source"`
+	EventDetail interface{} `json:"event_detail"`
+}
+
 // Device is the struct for each device conected to service.
 // It save the DeviceID for alerting purpose.
 // In device side, it is an automatics Device Regist on first start.
