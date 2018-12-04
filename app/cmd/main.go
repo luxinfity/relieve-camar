@@ -1,55 +1,41 @@
 package main
 
 import (
-	"fmt"
-	"github.com/prometheus/common/log"
-	"github.com/dghubble/go-twitter/twitter"
+	"log"
 	"os"
-	"os/signal"
-	"syscall"
 	"github.com/joho/godotenv"
-	"github.com/dghubble/oauth1"
+	"github.com/pamungkaski/camar"
+	"github.com/pamungkaski/camar/client"
+	"github.com/pamungkaski/camar/grabber"
+	"github.com/pamungkaski/camar/notifier"
+	"github.com/pamungkaski/camar/recorder"
+	"context"
 )
 
 func main() {
 	godotenv.Load()
-	apiKey := os.Getenv("API_KEY")
-	apiKeySecret := os.Getenv("API_KEY_SECRET")
-	accessToken := os.Getenv("ACCESS_TOKEN")
-	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
-	fmt.Println("Starting Stream...")
-	config := oauth1.NewConfig(apiKey, apiKeySecret)
-	token := oauth1.NewToken(accessToken, accessTokenSecret)
-	httpClient := config.Client(oauth1.NoContext, token)
-
-	// Twitter client
-	twitClient := twitter.NewClient(httpClient)
-
-	// Convenience Demux demultiplexed stream messages
-	demux := twitter.NewSwitchDemux()
-	demux.Tweet = func(tweet *twitter.Tweet) {
-		fmt.Println(tweet)
-	}
-
-	// FILTER
-	params := &twitter.StreamFilterParams{
-		Follow: []string{"382449035"},
-		StallWarnings: twitter.Bool(true),
-	}
-
-	stream, err := twitClient.Streams.Filter(params)
+	username := os.Getenv("MONGO_USERNAME")
+	password := os.Getenv("MONGO_PASSWORD")
+	host := os.Getenv("MONGO_HOST")
+	authDB := os.Getenv("MONGO_AUTH_DB")
+	mg, err := recorder.NewMongoDB(username, password, host, authDB)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Receive messages until stopped or stream quits
-	go demux.HandleChan(stream.Messages)
+	grab := grabber.NewGrabber("http://dataweb.bmkg.go.id/inatews/gempadirasakan.xml", client.NewClient())
 
-	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	log.Fatal(<-ch)
+	fcm := notifier.NewAlerter()
 
-	fmt.Println("Stopping Stream...")
-	stream.Stop()
+	cam := camar.NewDisasterReporter(grab, mg, fcm)
+	latest, err := grab.GetEarthquakes()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, event := range latest {
+		if err := cam.RecordDisaster(context.Background(), event); err != nil {
+			log.Fatal(err)
+		}
+	}
 }

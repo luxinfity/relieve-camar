@@ -28,7 +28,8 @@ func main() {
 	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
 	runningPort := os.Getenv("RUNNING_PORT")
 	bmkgUserIdString := os.Getenv("BMKG_USER_ID")
-	mg, err := recorder.NewMongoDB(username, password, host)
+	authDB := os.Getenv("MONGO_AUTH_DB")
+	mg, err := recorder.NewMongoDB(username, password, host, authDB)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -46,11 +46,11 @@ type MongoDB struct {
 	session *mgo.Session
 }
 
-func NewMongoDB(username, password, host string) (*MongoDB, error) {
+func NewMongoDB(username, password, host, authDB string) (*MongoDB, error) {
 	mongoCredential := &mgo.Credential{
 		Username:    username,
 		Password:    password,
-		Source:      "admin",
+		Source:      authDB,
 		ServiceHost: host,
 	}
 	mg, err := mgo.Dial(host)

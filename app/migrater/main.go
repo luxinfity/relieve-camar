@@ -28,10 +28,11 @@ func main() {
 	username := os.Getenv("MONGO_USERNAME")
 	password := os.Getenv("MONGO_PASSWORD")
 	host := os.Getenv("MONGO_HOST")
+	authDB := os.Getenv("MONGO_AUTH_DB")
 	mongoCredential := &mgo.Credential{
 		Username:    username,
 		Password:    password,
-		Source:      "camar",
+		Source:      authDB,
 		ServiceHost: host,
 	}
 	mg, _ := mgo.Dial(host)
