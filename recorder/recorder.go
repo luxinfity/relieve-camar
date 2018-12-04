@@ -239,7 +239,7 @@ func (m *MongoDB) GetAllEvent(limit, page int, eventType string) ([]datamodel.Ev
 
 	if eventType != "" {
 		query = bson.M{
-			"eventtype": strings.Title(strings.ToLower(eventType)),
+			"eventtype": strings.ToLower(eventType),
 		}
 	}
 
