@@ -50,7 +50,7 @@ func NewMongoDB(username, password, host string) (*MongoDB, error) {
 	mongoCredential := &mgo.Credential{
 		Username:    username,
 		Password:    password,
-		Source:      "camar",
+		Source:      "admin",
 		ServiceHost: host,
 	}
 	mg, err := mgo.Dial(host)
