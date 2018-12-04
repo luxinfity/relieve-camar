@@ -10,6 +10,7 @@ import (
 	"github.com/pamungkaski/camar/notifier"
 	"github.com/pamungkaski/camar/recorder"
 	"context"
+	"github.com/globalsign/mgo"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	password := os.Getenv("MONGO_PASSWORD")
 	host := os.Getenv("MONGO_HOST")
 	authDB := os.Getenv("MONGO_AUTH_DB")
-	mg, err := recorder.NewMongoDB(username, password, host, authDB)
+	mech, err := recorder.NewMongoDB(username, password, host, authDB)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,8 +28,28 @@ func main() {
 
 	fcm := notifier.NewAlerter()
 
-	cam := camar.NewDisasterReporter(grab, mg, fcm)
+	cam := camar.NewDisasterReporter(grab, mech, fcm)
 	latest, err := grab.GetEarthquakes()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mongoCredential := &mgo.Credential{
+		Username:    username,
+		Password:    password,
+		Source:      authDB,
+		ServiceHost: host,
+	}
+	mg, _ := mgo.Dial(host)
+
+	mg.SetMode(mgo.Monotonic, true)
+
+	if err := mg.Login(mongoCredential); err != nil {
+		log.Fatal(err)
+	}
+
+	dbEve := mg.DB("camar").C("event")
+	_, err = dbEve.RemoveAll(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
