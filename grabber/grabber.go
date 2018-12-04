@@ -79,7 +79,7 @@ func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel
 		event.Location.Coordinates = append(event.Location.Coordinates, Longitude)
 		event.Location.Coordinates = append(event.Location.Coordinates, latitude)
 		event.Time = wkt.Unix()
-		event.TimeArrived = time.Now().Local().Unix()
+		event.TimeArrived = time.Now().Unix()
 		event.EventType = "earthquake"
 		event.Source = "bmkg"
 		event.EventDetail = quake
