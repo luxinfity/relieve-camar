@@ -66,7 +66,7 @@ func (b *BMKG) typecastBMKGQuakeToCamar(quakes datamodel.BMKGQuakes) []datamodel
 		coors := strings.Split(gempa.Point.Coordinates, " ")
 		latitude, _ := strconv.ParseFloat(strings.Split(coors[0], ",")[0], 64)
 		Longitude, _ := strconv.ParseFloat(coors[1], 64)
-		wkt, _ := time.ParseInLocation("2/1/2006-15:04:05", strings.Split(gempa.Tanggal, " ")[0], time.Local)
+		wkt, _ := time.ParseInLocation("2/1/2006-15:04:05", strings.Split(gempa.Tanggal, " ")[0], time.UTC)
 
 		quake.Title = fmt.Sprintf("Gempa Mag:%.1f, %s, %s pada kedalaman %s dapat dirasakan di %s", mag, wkt.Format("2/1/2006-15:04:05"), gempa.Keterangan, gempa.Kedalaman, gempa.Dirasakan)
 		quake.Mag = mag
