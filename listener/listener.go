@@ -81,11 +81,5 @@ func (l *Listener) validateTwit(tweet *twitter.Tweet) bool {
 		return false
 	}
 
-	date := strings.Split(word[2], "/")
-
-	if len(date) != 3 {
-		return false
-	}
-
 	return true
 }

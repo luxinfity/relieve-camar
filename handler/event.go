@@ -110,6 +110,7 @@ func (h *Handler) DeleteEvent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+
 func (h *Handler) GetAllEvent(ctx *gin.Context) {
 	fmt.Println("Endpoint Hit: Get All Event")
 	ctx.Header("Content-Type", "application/json")
@@ -149,6 +150,46 @@ func (h *Handler) GetAllEvent(ctx *gin.Context) {
 	}
 
 	data, count, err := h.camar.GetAllEvent(context.Background(), limit, page, eventType)
+	if err != nil {
+		fmt.Println(err)
+		response.Data = err
+		response.Status = http.StatusServiceUnavailable
+		ctx.JSON(http.StatusServiceUnavailable, response)
+		return
+	}
+
+	response = struct {
+		Status int `json:"status"`
+		MaxResults int `json:"max_results"`
+		Data interface{} `json:"data"`
+	}{
+		Status: http.StatusOK,
+		MaxResults: count,
+		Data: data,
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) CheckBMKG(ctx *gin.Context) {
+	fmt.Println("Endpoint Hit: Check BMKG")
+	response := struct {
+		Status int `json:"status"`
+		MaxResults int `json:"max_results"`
+		Data interface{} `json:"data"`
+	}{}
+	ctx.Header("Content-Type", "application/json")
+
+	err := h.camar.ListenTheEarth()
+	if err != nil {
+		fmt.Println(err)
+		response.Data = err
+		response.Status = http.StatusServiceUnavailable
+		ctx.JSON(http.StatusServiceUnavailable, response)
+		return
+	}
+
+	data, count, err := h.camar.GetAllEvent(context.Background(), 20, 1, "earthquake")
 	if err != nil {
 		fmt.Println(err)
 		response.Data = err

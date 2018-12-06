@@ -74,7 +74,7 @@ func (c *Camar) ListenTheEarth() error {
 	if err != nil {
 		return err
 	}
-	quakes, _, err := c.recorder.GetAllEvent(1, 1, "Earthquake")
+	quakes, _, err := c.recorder.GetAllEvent(1, 1, "earthquake")
 	if err != nil {
 		return nil
 	}

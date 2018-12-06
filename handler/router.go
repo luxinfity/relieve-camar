@@ -18,6 +18,7 @@ func NewRouter(camar camar.DisasterReporter) *gin.Engine {
 	}
 
 	router := gin.Default()
+	router.GET("/checkBMKG", handler.CheckBMKG)
 	router.GET("/device", handler.GetAllDevice)
 	router.POST("/device", handler.RegisterDevice)
 	router.GET("/device/:id", handler.GetDevice)
